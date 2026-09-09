@@ -1,6 +1,5 @@
 "use client";
 
-import { toast } from "sonner";
 import { Banknote, Minus, Plus, ShoppingBasket, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKeranjangStore } from "@/lib/stores/keranjang-store";
-import { usePosStore } from "@/lib/stores/pos-store";
 import { useUiStore } from "@/lib/stores/ui-store";
 import {
   formatRupiah,
@@ -26,23 +24,10 @@ export function KeranjangPanel({ compact = false }: { compact?: boolean }) {
   const diskonNilai = useKeranjangStore((s) => s.diskonNilai);
   const diskonTipe = useKeranjangStore((s) => s.diskonTipe);
   const setBayarOpen = useUiStore((s) => s.setBayarOpen);
-  const products = usePosStore((s) => s.products);
 
   const subtotal = hitungSubtotal(items);
   const diskon = hitungDiskon(subtotal, diskonNilai, diskonTipe);
   const total = hitungTotal(subtotal, diskon);
-
-  function bayar() {
-    if (items.length === 0) return;
-    for (const baris of items) {
-      const p = products.find((x) => x.id === baris.productId);
-      if (p && baris.qty > p.stockQty) {
-        toast.error(`Stok ${p.name} tinggal ${p.stockQty}. Kurangi jumlah dulu ya.`);
-        return;
-      }
-    }
-    setBayarOpen(true);
-  }
 
   return (
     <div className={`flex h-full flex-col bg-card ${compact ? "" : "border-l"}`}>
@@ -114,7 +99,11 @@ export function KeranjangPanel({ compact = false }: { compact?: boolean }) {
       <div className="space-y-2 border-t bg-card px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Diskon</span>
-          <Tabs value={diskonTipe} onValueChange={(v) => setDiskon(diskonNilai, v as "fixed" | "percentage")} className="ml-auto">
+          <Tabs
+            value={diskonTipe}
+            onValueChange={(v) => setDiskon(diskonNilai, v as "fixed" | "percentage")}
+            className="ml-auto"
+          >
             <TabsList className="h-8">
               <TabsTrigger value="fixed" className="h-6 px-2 text-xs">
                 Rp
@@ -148,7 +137,13 @@ export function KeranjangPanel({ compact = false }: { compact?: boolean }) {
           <span className="font-semibold">Total Bayar</span>
           <span className="text-xl font-bold text-primary font-money">{formatRupiah(total)}</span>
         </div>
-        <Button variant="success" size="lg" className="w-full text-base" onClick={bayar} disabled={items.length === 0}>
+        <Button
+          variant="success"
+          size="lg"
+          className="w-full text-base"
+          onClick={() => setBayarOpen(true)}
+          disabled={items.length === 0}
+        >
           <Banknote className="size-5" />
           Bayar
         </Button>

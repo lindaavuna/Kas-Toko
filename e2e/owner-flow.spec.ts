@@ -35,7 +35,7 @@ test.describe("Area pemilik (backoffice) dengan data dummy", () => {
     await page.getByRole("button", { name: /Terima Pembayaran/ }).first().click();
     await page.getByRole("button", { name: /Lunas Semua/ }).click();
     await page.getByRole("button", { name: "Simpan Pembayaran" }).click();
-    await expect(page.getByText(/LUNAS/)).toBeVisible();
+    await expect(page.getByText(/Lunas/i)).toBeVisible();
     void kartuBuAni;
   });
 

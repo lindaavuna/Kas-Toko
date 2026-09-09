@@ -39,7 +39,7 @@ export interface Product {
   stockQty: number;
   minStock: number;
   emoji: string;
-  imageEmoji?: string;
+  fotoUrl?: string;
   units?: ProductUnit[];
   isActive: boolean;
 }
@@ -197,4 +197,21 @@ export interface CashierAccount {
   email: string;
   pin: string;
   isActive: boolean;
+}
+
+/** Petugas login utk komponen client (serializable) */
+export interface Petugas {
+  id: string;
+  nama: string;
+  peran: Role;
+  storeId: string;
+  storeName: string;
+}
+
+/** Info toko utk struk & dialog */
+export interface InfoToko {
+  nama: string;
+  alamat: string;
+  telepon: string;
+  kakiStruk: string;
 }

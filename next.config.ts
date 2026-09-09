@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Izinkan akses mode dev dari perangkat lain di jaringan LAN
+  allowedDevOrigins: ["172.22.22.18", "*.172.22.22.18", "kastoko.lan", "*.kastoko.lan"],
   async headers() {
     return [
       {

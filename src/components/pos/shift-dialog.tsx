@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AlertTriangle, BadgeCheck, Banknote, Printer, Scale, Wallet } from "lucide-react";
 
@@ -16,39 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { usePosStore } from "@/lib/stores/pos-store";
-import { useSesiStore } from "@/lib/stores/sesi-store";
+import { aksiBukaShift, aksiRangkumanLaci, aksiTutupShift } from "@/lib/server/aksi-pos";
+import { aksiCatatPengeluaran } from "@/lib/server/aksi-kas";
 import { useUiStore } from "@/lib/stores/ui-store";
 import { formatRupiah } from "@/lib/format";
-import { kasSeharusnya } from "@/lib/kas";
-import type { Shift } from "@/lib/types";
-
-function setelah(iso: string, batas: string): boolean {
-  return new Date(iso).getTime() >= new Date(batas).getTime();
-}
-
-export function hitungRangkumanKas(
-  shift: Shift,
-  state: Pick<ReturnType<typeof usePosStore.getState>, "sales" | "receivables" | "expenses">
-) {
-  const penjualanTunai = state.sales
-    .filter(
-      (s) =>
-        s.status === "paid" &&
-        s.paymentMethod === "cash" &&
-        s.cashierId === shift.cashierId &&
-        setelah(s.createdAt, shift.openedAt)
-    )
-    .reduce((a, s) => a + s.total, 0);
-  const bayarKasbonTunai = state.receivables
-    .flatMap((r) => r.payments)
-    .filter((pm) => setelah(pm.paidAt, shift.openedAt))
-    .reduce((a, p) => a + p.amount, 0);
-  const pengeluaranTunai = state.expenses
-    .filter((e) => setelah(e.createdAt, shift.openedAt))
-    .reduce((a, e) => a + e.amount, 0);
-  return { penjualanTunai, bayarKasbonTunai, pengeluaranTunai };
-}
+import type { InfoToko, Shift } from "@/lib/types";
 
 /** Input uang dengan pemisah ribuan otomatis; simpan digit murni di state */
 export function InputUang({
@@ -84,33 +57,34 @@ export function angkaDariDigit(digit: string): number {
   return Number(digit || 0);
 }
 
-/** Dialog Buka & Tutup Kasir (Task 1.7) */
-export function DialogShift() {
+/** Dialog Buka & Tutup Kasir (Task 1.7, kini memakai DB) */
+export function DialogShift({ toko }: { toko: InfoToko }) {
   const dialogShift = useUiStore((s) => s.dialogShift);
   const setDialogShift = useUiStore((s) => s.setDialogShift);
-  const shift = usePosStore((s) => s.shift);
 
   return (
     <Dialog open={dialogShift !== null} onOpenChange={(o) => !o && setDialogShift(null)}>
       {dialogShift === "buka" && <IsiBuka onTutup={() => setDialogShift(null)} />}
-      {dialogShift === "tutup" && shift && (
-        <IsiTutup shift={shift} onTutup={() => setDialogShift(null)} />
-      )}
+      {dialogShift === "tutup" && <IsiTutup onTutup={() => setDialogShift(null)} toko={toko} />}
     </Dialog>
   );
 }
 
 function IsiBuka({ onTutup }: { onTutup: () => void }) {
-  const bukaShift = usePosStore((s) => s.bukaShift);
-  const user = useSesiStore((s) => s.user);
+  const router = useRouter();
   const [modal, setModal] = useState("150000");
+  const [sibuk, setSibuk] = useState(false);
   const angkaModal = angkaDariDigit(modal);
 
-  function mulai() {
-    if (!user) return;
-    const hasil = bukaShift(angkaModal, user);
+  async function mulai() {
+    setSibuk(true);
+    const hasil = await aksiBukaShift(angkaModal);
+    setSibuk(false);
     toast[hasil.ok ? "success" : "error"](hasil.pesan);
-    if (hasil.ok) onTutup();
+    if (hasil.ok) {
+      onTutup();
+      router.refresh();
+    }
   }
 
   return (
@@ -144,42 +118,60 @@ function IsiBuka({ onTutup }: { onTutup: () => void }) {
         </div>
       </div>
       <DialogFooter>
-        <Button variant="success" size="lg" className="w-full" onClick={mulai}>
-          Mulai Jualan
+        <Button variant="success" size="lg" className="w-full" onClick={mulai} disabled={sibuk}>
+          {sibuk ? "Menyimpan…" : "Mulai Jualan"}
         </Button>
       </DialogFooter>
     </DialogContent>
   );
 }
 
-function IsiTutup({ shift, onTutup }: { shift: Shift; onTutup: () => void }) {
-  const sales = usePosStore((s) => s.sales);
-  const receivables = usePosStore((s) => s.receivables);
-  const expenses = usePosStore((s) => s.expenses);
-  const tutupShift = usePosStore((s) => s.tutupShift);
+type DataLaci = Awaited<ReturnType<typeof aksiRangkumanLaci>>;
+
+function IsiTutup({ onTutup, toko }: { onTutup: () => void; toko: InfoToko }) {
+  const router = useRouter();
   const [uangFisik, setUangFisik] = useState("");
+  const [data, setData] = useState<DataLaci | null>(null);
+  const [sibuk, setSibuk] = useState(false);
+
+  useEffect(() => {
+    let aktif = true;
+    aksiRangkumanLaci().then((r) => aktif && setData(r));
+    return () => {
+      aktif = false;
+    };
+  }, []);
 
   const angkaFisik = angkaDariDigit(uangFisik);
-  const rekap = useMemo(() => {
-    const r = hitungRangkumanKas(shift, { sales, receivables, expenses });
-    const seharusnya = kasSeharusnya({ startingCash: shift.startingCash, ...r });
-    return { ...r, seharusnya, selisih: angkaFisik - seharusnya };
-  }, [shift, sales, receivables, expenses, angkaFisik]);
+  const seharusnya = data?.ok ? data.laci.seharusnya : null;
+  const selisih = seharusnya === null ? 0 : angkaFisik - seharusnya;
 
-  function tutup() {
-    const hasil = tutupShift(angkaFisik);
-    if (!hasil.ok || !hasil.hasil || !hasil.shift) {
+  async function tutup() {
+    if (seharusnya === null) return;
+    setSibuk(true);
+    const hasil = await aksiTutupShift(angkaFisik);
+    setSibuk(false);
+    if (!hasil.ok) {
       toast.error(hasil.pesan);
       return;
     }
     onTutup();
-    const s = hasil.hasil.status;
+    router.refresh();
+    const selisihTutup = hasil.selisih ?? 0;
+    const s = hasil.status ?? (selisihTutup === 0 ? "seimbang" : selisihTutup > 0 ? "lebih" : "kurang");
     toast[s === "seimbang" ? "success" : "warning"](
       s === "seimbang"
         ? "Uang laci cocok — shift ditutup rapi. Mantap!"
-        : `Shift ditutup. Uang ${s} ${formatRupiah(Math.abs(hasil.hasil.selisih))}.`
+        : `Shift ditutup. Uang ${s} ${formatRupiah(Math.abs(selisihTutup))}.`
     );
-    cetakRekap(hasil.shift, hasil.hasil);
+    if (data?.ok) {
+      cetakRekap(
+        data.shift,
+        { seharusnya: hasil.seharusnya ?? 0, actual: angkaFisik, selisih: selisihTutup },
+        data.laci,
+        toko
+      );
+    }
   }
 
   return (
@@ -193,61 +185,60 @@ function IsiTutup({ shift, onTutup }: { shift: Shift; onTutup: () => void }) {
           Hitung uang fisik di laci, sistem mengecek selisihnya otomatis lalu cetak Z-Report.
         </DialogDescription>
       </DialogHeader>
-      <div className="space-y-2.5 text-sm">
-        <Baris label="Modal awal" nilai={formatRupiah(shift.startingCash)} />
-        <Baris
-          label="Penjualan tunai shift ini"
-          nilai={`+ ${formatRupiah(rekap.penjualanTunai)}`}
-          kelas="text-success"
-        />
-        <Baris
-          label="Pembayaran kasbon (tunai)"
-          nilai={`+ ${formatRupiah(rekap.bayarKasbonTunai)}`}
-          kelas="text-success"
-        />
-        <Baris
-          label="Pengeluaran tunai"
-          nilai={`- ${formatRupiah(rekap.pengeluaranTunai)}`}
-          kelas="text-danger"
-        />
-        <Separator />
-        <div className="flex justify-between font-semibold">
-          <span>Kas seharusnya</span>
-          <span className="font-money" data-testid="kas-seharusnya">
-            {formatRupiah(rekap.seharusnya)}
-          </span>
-        </div>
-        <div className="space-y-2 pt-1">
-          <Label htmlFor="uang-fisik">Uang Fisik di Laci</Label>
-          <InputUang idLabel="uang-fisik" digit={uangFisik} setDigit={setUangFisik} />
-        </div>
-        {uangFisik !== "" && (
-          <div
-            className={`mt-1 flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 font-semibold ${
-              rekap.selisih === 0 ? "text-success" : rekap.selisih > 0 ? "text-warning" : "text-danger"
-            }`}
-          >
-            {rekap.selisih === 0 ? (
-              <>
-                <BadgeCheck className="size-4" /> Uang Cocok (Seimbang)
-              </>
-            ) : rekap.selisih > 0 ? (
-              <>
-                <Scale className="size-4" /> Lebih {formatRupiah(rekap.selisih)}
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="size-4" /> Kurang {formatRupiah(Math.abs(rekap.selisih))}
-              </>
-            )}
+      {data === null ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">Mengambil data laci…</p>
+      ) : !data.ok ? (
+        <p className="py-6 text-center text-sm text-danger">{data.pesan}</p>
+      ) : (
+        <div className="space-y-2.5 text-sm">
+          <Baris label="Modal awal" nilai={formatRupiah(data.laci.startingCash)} />
+          <Baris label="Penjualan tunai shift ini" nilai={`+ ${formatRupiah(data.laci.penjualanTunai)}`} kelas="text-success" />
+          <Baris label="Pembayaran kasbon (tunai)" nilai={`+ ${formatRupiah(data.laci.bayarKasbonTunai)}`} kelas="text-success" />
+          <Baris label="Pengeluaran & koreksi kas" nilai={`- ${formatRupiah(data.laci.pengeluaranTunai)}`} kelas="text-danger" />
+          <Separator />
+          <div className="flex justify-between font-semibold">
+            <span>Kas seharusnya</span>
+            <span className="font-money" data-testid="kas-seharusnya">
+              {formatRupiah(data.laci.seharusnya)}
+            </span>
           </div>
-        )}
-      </div>
+          <div className="space-y-2 pt-1">
+            <Label htmlFor="uang-fisik">Uang Fisik di Laci</Label>
+            <InputUang idLabel="uang-fisik" digit={uangFisik} setDigit={setUangFisik} />
+          </div>
+          {uangFisik !== "" && (
+            <div
+              className={`mt-1 flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 font-semibold ${
+                selisih === 0 ? "text-success" : selisih > 0 ? "text-warning" : "text-danger"
+              }`}
+            >
+              {selisih === 0 ? (
+                <>
+                  <BadgeCheck className="size-4" /> Uang Cocok (Seimbang)
+                </>
+              ) : selisih > 0 ? (
+                <>
+                  <Scale className="size-4" /> Lebih {formatRupiah(selisih)}
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="size-4" /> Kurang {formatRupiah(Math.abs(selisih))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       <DialogFooter className="gap-2 sm:gap-2">
         <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={onTutup}>
           Nanti Saja
         </Button>
-        <Button size="lg" className="w-full sm:w-auto" onClick={tutup} disabled={uangFisik === ""}>
+        <Button
+          size="lg"
+          className="w-full sm:w-auto"
+          onClick={tutup}
+          disabled={uangFisik === "" || sibuk || data === null || !data.ok}
+        >
           <Printer className="size-4" />
           Tutup &amp; Cetak Z-Report
         </Button>
@@ -265,21 +256,25 @@ function Baris({ label, nilai, kelas }: { label: string; nilai: string; kelas?: 
   );
 }
 
-function cetakRekap(sh: Shift, hasil: { seharusnya: number; actual: number; selisih: number }) {
-  const r = hitungRangkumanKas(sh, usePosStore.getState());
+function cetakRekap(
+  sh: Shift,
+  hasil: { seharusnya: number; actual: number; selisih: number },
+  laci: { startingCash: number; penjualanTunai: number; bayarKasbonTunai: number; pengeluaranTunai: number },
+  toko: InfoToko
+) {
   const garis = "-".repeat(28);
   const teks = [
     "REKAP TUTUP KASIR (Z-REPORT)",
-    "Toko Berkah Jaya",
+    toko?.nama ?? "KasToko",
     sh.cashierName,
     garis,
     `Buka   : ${new Date(sh.openedAt).toLocaleString("id-ID")}`,
     `Tutup  : ${new Date().toLocaleString("id-ID")}`,
     garis,
-    `Modal awal      : ${formatRupiah(sh.startingCash)}`,
-    `Penjualan tunai : ${formatRupiah(r.penjualanTunai)}`,
-    `Bayar kasbon    : ${formatRupiah(r.bayarKasbonTunai)}`,
-    `Pengeluaran     : ${formatRupiah(r.pengeluaranTunai)}`,
+    `Modal awal      : ${formatRupiah(laci.startingCash)}`,
+    `Penjualan tunai : ${formatRupiah(laci.penjualanTunai)}`,
+    `Bayar kasbon    : ${formatRupiah(laci.bayarKasbonTunai)}`,
+    `Pengeluaran     : ${formatRupiah(laci.pengeluaranTunai)}`,
     garis,
     `Kas seharusnya  : ${formatRupiah(hasil.seharusnya)}`,
     `Uang fisik laci  : ${formatRupiah(hasil.actual)}`,
@@ -306,8 +301,7 @@ function cetakRekap(sh: Shift, hasil: { seharusnya: number; actual: number; seli
 /** Dialog Catat Pengeluaran Kas */
 export function DialogPengeluaran() {
   const [open, setOpen] = useState(false);
-  const user = useSesiStore((s) => s.user);
-  const catat = usePosStore((s) => s.catatPengeluaran);
+  const router = useRouter();
 
   return (
     <>
@@ -319,10 +313,13 @@ export function DialogPengeluaran() {
         {open && (
           <IsiPengeluaran
             onTutup={() => setOpen(false)}
-            simpan={(judul, angka) => {
-              if (!user) return;
-              catat(judul, angka, user);
-              toast.success(`Pengeluaran ${formatRupiah(angka)} untuk "${judul}" tercatat dari kas laci.`);
+            simpan={async (judul, angka) => {
+              const hasil = await aksiCatatPengeluaran({ title: judul, amount: angka });
+              toast[hasil.ok ? "success" : "error"](hasil.pesan);
+              if (hasil.ok) {
+                setOpen(false);
+                router.refresh();
+              }
             }}
           />
         )}
@@ -333,15 +330,15 @@ export function DialogPengeluaran() {
 
 function IsiPengeluaran({
   onTutup,
-  simpan: simpanFn,
+  simpan,
 }: {
   onTutup: () => void;
-  simpan: (judul: string, angka: number) => void;
+  simpan: (judul: string, angka: number) => Promise<void>;
 }) {
   const [judul, setJudul] = useState("");
   const [jumlah, setJumlah] = useState("");
 
-  function simpan() {
+  async function simpanKlik() {
     const angka = angkaDariDigit(jumlah);
     if (!judul.trim()) {
       toast.error("Isi dulu keperluan pengeluarannya, misal: beli token listrik.");
@@ -351,8 +348,7 @@ function IsiPengeluaran({
       toast.error("Nominal pengeluaran harus lebih dari nol.");
       return;
     }
-    simpanFn(judul.trim(), angka);
-    onTutup();
+    await simpan(judul.trim(), angka);
   }
 
   return (
@@ -379,7 +375,7 @@ function IsiPengeluaran({
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={simpan} size="lg" className="w-full sm:w-auto">
+        <Button onClick={simpanKlik} size="lg" className="w-full sm:w-auto">
           Simpan Pengeluaran
         </Button>
       </DialogFooter>

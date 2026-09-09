@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { HandCoins } from "lucide-react";
 
@@ -14,13 +15,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { usePosStore } from "@/lib/stores/pos-store";
-import { useSesiStore } from "@/lib/stores/sesi-store";
+import { aksiTerimaPembayaranKasbon } from "@/lib/server/aksi-kas";
 import { formatRupiah } from "@/lib/format";
 import { InputUang, angkaDariDigit } from "@/components/pos/shift-dialog";
 import type { Receivable } from "@/lib/types";
 
-/** Dialog [Terima Pembayaran] kasbon — menghitung sisa hutang otomatis (Task 1.16) */
+/** Dialog [Terima Pembayaran] kasbon — sisa dihitung & divalidasi di server */
 export function DialogTerimaPembayaran({
   receivable,
   open,
@@ -30,16 +30,15 @@ export function DialogTerimaPembayaran({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  const router = useRouter();
   const [digit, setDigit] = useState("");
-  const terima = usePosStore((s) => s.terimaPembayaranKasbon);
-  const user = useSesiStore((s) => s.user);
+  const [proses, setProses] = useState(false);
 
   if (!receivable) return null;
   const sisa = receivable.originalAmount - receivable.paidAmount;
   const jumlah = angkaDariDigit(digit);
 
-  function simpan() {
-    if (!user) return;
+  async function simpan() {
     if (jumlah <= 0) {
       toast.error("Isi nominal pembayaran dulu.");
       return;
@@ -48,14 +47,15 @@ export function DialogTerimaPembayaran({
       toast.error(`Bayar maksimal sesuai sisa kasbon (${formatRupiah(sisa)}).`);
       return;
     }
-    terima(receivable!.id, jumlah, user);
-    toast.success(
-      jumlah === sisa
-        ? `Kasbon ${receivable!.customerName} LUNAS. Terima kasih! 🎉`
-        : `Pembayaran ${formatRupiah(jumlah)} dicatat masuk kas laci.`
-    );
-    setDigit("");
-    onOpenChange(false);
+    setProses(true);
+    const hasil = await aksiTerimaPembayaranKasbon({ receivableId: receivable!.id, amount: jumlah });
+    setProses(false);
+    toast[hasil.ok ? "success" : "error"](hasil.pesan);
+    if (hasil.ok) {
+      setDigit("");
+      onOpenChange(false);
+      router.refresh();
+    }
   }
 
   return (
@@ -95,8 +95,8 @@ export function DialogTerimaPembayaran({
           </p>
         </div>
         <DialogFooter>
-          <Button size="lg" onClick={simpan} className="w-full sm:w-auto">
-            Simpan Pembayaran
+          <Button size="lg" onClick={simpan} disabled={proses} className="w-full sm:w-auto">
+            {proses ? "Menyimpan…" : "Simpan Pembayaran"}
           </Button>
         </DialogFooter>
       </DialogContent>

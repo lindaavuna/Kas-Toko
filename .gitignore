@@ -45,3 +45,6 @@ test-results/
 playwright-report/
 blob-report/
 !.env.example
+.env
+.env.local
+data/

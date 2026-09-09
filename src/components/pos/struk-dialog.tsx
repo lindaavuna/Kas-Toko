@@ -14,26 +14,35 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { usePosStore } from "@/lib/stores/pos-store";
 import { useUiStore } from "@/lib/stores/ui-store";
 import { useKeranjangStore } from "@/lib/stores/keranjang-store";
 import { formatRupiah } from "@/lib/format";
 import { barisStruk, tautanWhatsApp, teksNotaWa } from "@/lib/nota";
-import { TOKO } from "@/lib/dummy-data";
+import { nomorWa } from "@/lib/format";
+import type { Customer, InfoToko } from "@/lib/types";
 
-export function DialogStruk() {
+export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Customer[] }) {
   const sale = useUiStore((s) => s.strukSale);
   const setStrukSale = useUiStore((s) => s.setStrukSale);
   const kosongkan = useKeranjangStore((s) => s.kosongkan);
-  const customers = usePosStore((s) => s.customers);
   const [lebar, setLebar] = useState<"58" | "80">("58");
-  const [telepon, setTelepon] = useState("");
+  const pelangganTerpilih = useMemo(
+    () => pelanggan.find((c) => c.id === sale?.customerId),
+    [pelanggan, sale]
+  );
 
-  const baris = useMemo(() => (sale ? barisStruk(sale, TOKO) : []), [sale]);
-  const pelanggan = sale?.customerId ? customers.find((c) => c.id === sale.customerId) : undefined;
-  const nomorTujuan = pelanggan?.phone ?? telepon.replace(/\D/g, "");
+  const baris = useMemo(() => (sale ? barisStruk(sale, toko) : []), [sale, toko]);
 
   if (!sale) return null;
+
+  function tutup() {
+    setStrukSale(null);
+  }
+
+  function selesai() {
+    setStrukSale(null);
+    kosongkan();
+  }
 
   function cetakBrowser() {
     toast.info("Menyiapkan cetak struk via browser (cadangan ESC/POS).");
@@ -42,27 +51,21 @@ export function DialogStruk() {
 
   function cetakBluetooth() {
     toast.success(
-      `Mengirim perintah ESC/POS ke printer Bluetooth ${lebar}mm... (simulasi — driver asli di Tahap 3)`
+      "Mengirim perintah ESC/POS ke printer Bluetooth... (driver asli menyala di Tahap 3)"
     );
   }
 
-  function kirimWa() {
-    if (nomorTujuan.length < 9) {
-      toast.error("Isi dulu nomor HP pembeli untuk mengirim nota.");
+  function kirimWa(noTelp?: string) {
+    const nomor = nomorWa(pelangganTerpilih?.phone ?? noTelp);
+    if (!nomor) {
+      toast.error("Nomor HP pembeli belum diisi.");
       return;
     }
-    const pesan = teksNotaWa(sale!, { ...TOKO, telepon: TOKO.telepon });
-    window.open(tautanWhatsApp(nomorTujuan, pesan), "_blank");
-  }
-
-  function selesai() {
-    setStrukSale(null);
-    setTelepon("");
-    kosongkan();
+    window.open(tautanWhatsApp(nomor, teksNotaWa(sale!, toko)), "_blank");
   }
 
   return (
-    <Dialog open onOpenChange={(o) => !o && selesai()}>
+    <Dialog open onOpenChange={(o) => !o && tutup()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -74,7 +77,7 @@ export function DialogStruk() {
               ? "Belanja dicatat sebagai kasbon pelanggan."
               : sale.paymentMethod === "cash"
                 ? `Uang diterima ${formatRupiah(sale.amountPaid)} — kembalian:`
-                : `Pembayaran via ${sale.paymentMethod === "bank_transfer" ? "transfer bank" : "QRIS"} tercatat.`}
+                : "Pembayaran non-tunai tercatat."}
           </DialogDescription>
         </DialogHeader>
 
@@ -90,7 +93,7 @@ export function DialogStruk() {
         <div className="mx-auto max-h-[45vh] overflow-y-auto rounded-lg border bg-white p-3">
           <div
             id="struk-print"
-            className={`mx-auto font-mono text-[11px] leading-5 text-black ${lebar === "58" ? "w-[58mm]" : "w-[80mm]"}`}
+            className={`mx-auto font-mono text-[11px] leading-5 text-black ${lebar === "58" ? "w-[58mm]" : "struk-80 w-[80mm]"}`}
           >
             {baris.map((b, i) => (
               <p key={i} className="whitespace-pre">
@@ -110,17 +113,18 @@ export function DialogStruk() {
           </Button>
         </div>
 
-        {!pelanggan && (
+        {!pelangganTerpilih && (
           <div className="space-y-1.5">
             <label htmlFor="wa-no" className="text-xs text-muted-foreground">
-              Nomor HP pembeli (opsional, untuk kirim nota)
+              Nomor HP pembeli (untuk kirim nota)
             </label>
             <Input
               id="wa-no"
               inputMode="tel"
               placeholder="0812xxxxxxx"
-              value={telepon}
-              onChange={(e) => setTelepon(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") kirimWa((e.target as HTMLInputElement).value);
+              }}
             />
           </div>
         )}
@@ -134,7 +138,11 @@ export function DialogStruk() {
             <Printer className="size-4" />
             Cetak Browser
           </Button>
-          <Button variant="success" size="lg" onClick={kirimWa}>
+          <Button
+            variant="success"
+            size="lg"
+            onClick={() => kirimWa((document.getElementById("wa-no") as HTMLInputElement | null)?.value)}
+          >
             <MessageCircle className="size-4" />
             Kirim Nota WhatsApp
           </Button>

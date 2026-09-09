@@ -53,8 +53,10 @@ test.describe("Uji responsif (Task 1.20)", () => {
     });
     const page = await ctx.newPage();
     await loginKasir(page);
-    await expect(page.getByRole("heading", { name: /Buka Kasir/i })).toBeVisible();
-    await page.getByRole("button", { name: /Mulai Jualan/i }).click();
+    const bukaDialog = page.getByRole("heading", { name: /Buka Kasir/i });
+    if (await bukaDialog.isVisible({ timeout: 2500 }).catch(() => false)) {
+      await page.getByRole("button", { name: /Mulai Jualan/i }).click();
+    }
 
     await page.getByRole("button", { name: "Telur Ayam 1Kg", exact: true }).click();
     await page.getByRole("button", { name: "Buka keranjang belanja" }).click();

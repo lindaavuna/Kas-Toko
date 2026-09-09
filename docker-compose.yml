@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kastoko-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kastoko}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD wajib ada di .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kastoko}
+      # Zona waktu sesi agar tanggal lokal kasir konsisten (WIB)
+      TZ: Asia/Jakarta
+      PGTZ: Asia/Jakarta
+    ports:
+      # 5433 host -> 5432 container, aman dari bentrok Postgres default 5432
+      - "5433:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kastoko} -d ${POSTGRES_DB:-kastoko}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

@@ -2,7 +2,6 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { KeranjangPanel } from "@/components/pos/keranjang-panel";
 import { useKeranjangStore } from "@/lib/stores/keranjang-store";
-import { usePosStore } from "@/lib/stores/pos-store";
 import type { Product } from "@/lib/types";
 
 const minyak: Product = {
@@ -19,7 +18,6 @@ const minyak: Product = {
 };
 
 beforeEach(() => {
-  usePosStore.setState(usePosStore.getInitialState());
   useKeranjangStore.setState({ items: [], diskonNilai: 0, diskonTipe: "fixed" });
 });
 
