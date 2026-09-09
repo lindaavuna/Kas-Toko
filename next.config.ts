@@ -2,8 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Izinkan akses mode dev dari perangkat lain di jaringan LAN
-  allowedDevOrigins: ["172.22.22.18", "*.172.22.22.18", "kastoko.lan", "*.kastoko.lan"],
+  // Izinkan akses mode dev dari perangkat lain di jaringan LAN & domain publik
+  allowedDevOrigins: [
+    "172.22.22.18",
+    "*.172.22.22.18",
+    "kastoko.lan",
+    "*.kastoko.lan",
+    "toko.billinghmb.site",
+    "*.billinghmb.site",
+  ],
   async headers() {
     return [
       {
