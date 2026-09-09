@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { toast } from "sonner";
+import { FileSpreadsheet, FileText, Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +25,7 @@ import {
 } from "@/components/ui/table";
 
 import { formatWaktu } from "@/lib/format";
+import { unduhCsv, cetakDokumen } from "@/lib/export";
 import type { StockMutation } from "@/lib/types";
 
 const ALASAN_ID: Record<string, string> = {
@@ -47,6 +50,61 @@ export function PanelMutasi({ mutations }: { mutations: StockMutation[] }) {
 
   const masuk = mutations.filter((m) => m.type === "in").length;
   const keluar = mutations.filter((m) => m.type === "out").length;
+
+  function eksporMutasi(kind: "xlsx" | "pdf") {
+    toast.info(`Menyiapkan unduhan mutasi stok ${kind.toUpperCase()}…`);
+    const tanggalHariIni = new Date().toISOString().slice(0, 10);
+
+    if (kind === "xlsx") {
+      const kolom = [
+        "Waktu",
+        "Nama Produk",
+        "Tipe Pergerakan",
+        "Alasan Mutasi",
+        "Jumlah Qty",
+        "No. Referensi / Catatan",
+        "Petugas Audit",
+      ];
+      const baris = daftar.map((m) => [
+        formatWaktu(m.createdAt),
+        m.productName,
+        m.type === "in" ? "Barang Masuk" : "Barang Keluar",
+        ALASAN_ID[m.reason] || m.reason,
+        m.type === "in" ? m.qty : -m.qty,
+        m.refNumber || m.note || "—",
+        m.byName || "—",
+      ]);
+
+      unduhCsv(`rekap-mutasi-stok-${tanggalHariIni}.csv`, kolom, baris);
+    } else {
+      cetakDokumen({
+        judul: "Riwayat Mutasi & Arus Stok Barang",
+        periode: `Per ${new Date().toLocaleDateString("id-ID", { dateStyle: "long" })}`,
+        ringkasan: [
+          { label: "Total Mutasi", nilai: `${daftar.length} pergerakan` },
+          {
+            label: "Barang Masuk",
+            nilai: `${daftar.filter((m) => m.type === "in").length} kali`,
+          },
+          {
+            label: "Barang Keluar",
+            nilai: `${daftar.filter((m) => m.type === "out").length} kali`,
+          },
+        ],
+        kolom: ["Waktu", "Produk", "Tipe", "Alasan", "Jumlah", "Referensi", "Petugas"],
+        kolomKanan: [4],
+        baris: daftar.map((m) => [
+          formatWaktu(m.createdAt),
+          m.productName,
+          m.type === "in" ? "Masuk" : "Keluar",
+          ALASAN_ID[m.reason] || m.reason,
+          m.type === "in" ? `+${m.qty}` : `-${m.qty}`,
+          m.refNumber || m.note || "—",
+          m.byName || "—",
+        ]),
+      });
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -79,6 +137,14 @@ export function PanelMutasi({ mutations }: { mutations: StockMutation[] }) {
             <SelectItem value="out">Barang Keluar</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex gap-1.5">
+          <Button size="sm" variant="outline" className="h-11" onClick={() => eksporMutasi("xlsx")}>
+            <FileSpreadsheet className="size-4 text-success" /> Export Excel
+          </Button>
+          <Button size="sm" variant="outline" className="h-11" onClick={() => eksporMutasi("pdf")}>
+            <FileText className="size-4 text-danger" /> Export PDF
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">

@@ -26,6 +26,7 @@ import {
 import { GrafikBatang } from "@/components/grafik-batang";
 import { aksiAmbilLaporan } from "@/lib/server/aksi-laporan";
 import { formatRupiah, formatWaktu } from "@/lib/format";
+import { unduhCsv, cetakDokumen } from "@/lib/export";
 import type { ArusKasBaris, RingkasanLaporan, TitikHarian } from "@/lib/server/data";
 
 type Rentang = "hari" | "7hari" | "bulan" | "kustom";
@@ -88,8 +89,48 @@ export function PanelLaporan({
 
   function ekspor(kind: "xlsx" | "pdf") {
     toast.info(
-      `Menyiapkan unduhan laporan ${kind.toUpperCase()} (${aktif.mulai} s.d. ${aktif.akhir})… unduh asli aktif di Tahap 4.`
+      `Menyiapkan unduhan laporan ${kind.toUpperCase()} (${aktif.mulai} s.d. ${aktif.akhir})…`
     );
+
+    if (kind === "xlsx") {
+      const kolom = ["Waktu", "Keterangan", "Uang Masuk (Rp)", "Uang Keluar (Rp)"];
+      const baris = data.arus.map((r) => [
+        formatWaktu(r.waktu),
+        r.keterangan,
+        r.masuk || 0,
+        r.keluar || 0,
+      ]);
+      // Tambahkan baris ringkasan di bawah
+      baris.push(["", "", "", ""]);
+      baris.push(["RINGKASAN", "", "", ""]);
+      baris.push(["Total Omset", "", data.ringkasan.omset, ""]);
+      baris.push(["Total HPP Modal", "", data.ringkasan.hpp, ""]);
+      baris.push(["Pengeluaran Kasir", "", "", data.ringkasan.pengeluaran]);
+      baris.push(["Laba Kotor", "", data.ringkasan.labaKotor, ""]);
+      baris.push(["Laba Bersih", "", data.ringkasan.labaBersih, ""]);
+
+      unduhCsv(`laporan-keuangan-${aktif.mulai}-sd-${aktif.akhir}.csv`, kolom, baris);
+    } else {
+      cetakDokumen({
+        judul: "Laporan Keuangan & Arus Kas",
+        periode: `${aktif.mulai} s.d. ${aktif.akhir}`,
+        ringkasan: [
+          { label: "Pemasukan", nilai: formatRupiah(data.ringkasan.omset) },
+          { label: "HPP (Modal)", nilai: formatRupiah(data.ringkasan.hpp) },
+          { label: "Pengeluaran", nilai: formatRupiah(data.ringkasan.pengeluaran) },
+          { label: "Laba Kotor", nilai: formatRupiah(data.ringkasan.labaKotor) },
+          { label: "Laba Bersih", nilai: formatRupiah(data.ringkasan.labaBersih) },
+        ],
+        kolom: ["Waktu", "Keterangan", "Masuk", "Keluar"],
+        kolomKanan: [2, 3],
+        baris: data.arus.map((r) => [
+          formatWaktu(r.waktu),
+          r.keterangan,
+          r.masuk ? formatRupiah(r.masuk) : "—",
+          r.keluar ? formatRupiah(r.keluar) : "—",
+        ]),
+      });
+    }
   }
 
   return (

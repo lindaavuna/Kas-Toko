@@ -23,13 +23,25 @@ export const metadata: Metadata = {
       "Sistem kasir cepat + pembukuan otomatis untuk toko kelontong dan sembako. PWA, siap Android, mendukung 58mm/80mm thermal.",
     type: "website",
   },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KasToko",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#0a58b8",
+  themeColor: "#059669",
 };
 
 export default function RootLayout({

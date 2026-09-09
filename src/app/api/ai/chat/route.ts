@@ -4,6 +4,7 @@ import {
   statistikDasbor,
   ambilProduk,
   ambilKasbon,
+  ambilIdentitasToko,
 } from "@/lib/server/data";
 import { catatPengeluaran } from "@/lib/server/bisnis";
 import { formatRupiah } from "@/lib/format";
@@ -138,9 +139,34 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Jika konfigurasi LLM Hermes API Key tersedia, hubungi provider
-    const apiKey = process.env.HERMES_API_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
-    const baseUrl = process.env.HERMES_API_BASE_URL || "https://openrouter.ai/api/v1";
+    // 2. Cek apakah AI dinonaktifkan atau memiliki kunci kustom mandiri di database
+    let customApiKey: string | undefined;
+    let customBaseUrl: string | undefined;
+    try {
+      const identitas = await ambilIdentitasToko(ctx!);
+      if (identitas && !identitas.aiAktif) {
+        return NextResponse.json({
+          role: "assistant",
+          content: "Asisten AI Hermes dinonaktifkan oleh pemilik toko di menu Pengaturan.",
+        });
+      }
+      if (identitas?.aiApiKey) customApiKey = identitas.aiApiKey;
+      if (identitas?.aiBaseUrl) customBaseUrl = identitas.aiBaseUrl;
+    } catch {
+      // Fallback bila query identitas gagal
+    }
+
+    const apiKey =
+      customApiKey ||
+      process.env.HERMES_API_KEY ||
+      process.env.AI_PROVIDER_API_KEY ||
+      process.env.OPENROUTER_API_KEY ||
+      process.env.OPENAI_API_KEY;
+    const baseUrl =
+      customBaseUrl ||
+      process.env.HERMES_API_BASE_URL ||
+      process.env.AI_PROVIDER_BASE_URL ||
+      "https://openrouter.ai/api/v1";
 
     if (apiKey) {
       try {

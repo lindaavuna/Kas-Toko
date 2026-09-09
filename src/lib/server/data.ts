@@ -586,7 +586,8 @@ export async function ambilIdentitasToko(ctx: Konteks) {
   const [r] = await tanya<Row>(
     ctx.userId,
     `select name, address, phone, receipt_footer, currency, subscription_status,
-       to_char(subscription_expires_at, 'YYYY-MM-DD') as expires_at
+       to_char(subscription_expires_at, 'YYYY-MM-DD') as expires_at,
+       ai_enabled, custom_ai_api_key, custom_ai_base_url
      from stores where id = $1`,
     [ctx.storeId]
   );
@@ -597,6 +598,9 @@ export async function ambilIdentitasToko(ctx: Konteks) {
     kakiStruk: (r?.receipt_footer as string) ?? "",
     statusSewa: (r?.subscription_status as string) ?? "trial",
     sewaBerakhir: (r?.expires_at as string) ?? "",
+    aiAktif: (r?.ai_enabled as boolean) ?? true,
+    aiApiKey: (r?.custom_ai_api_key as string) ?? "",
+    aiBaseUrl: (r?.custom_ai_base_url as string) ?? "",
   };
 }
 

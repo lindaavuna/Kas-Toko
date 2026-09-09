@@ -40,11 +40,13 @@ export function PanelPengaturan({
   cashierAccounts,
   identitas,
   sewa,
+  aiConfig,
 }: {
   categories: Category[];
   cashierAccounts: { id: string; nama: string; email: string; aktif: boolean }[];
   identitas: { nama: string; alamat: string; telepon: string; kakiStruk: string };
   sewa: { status: string; berakhir: string };
+  aiConfig?: { aktif: boolean; apiKey?: string; baseUrl?: string };
 }) {
   const router = useRouter();
   const [toko, setToko] = useState(identitas);
@@ -57,10 +59,14 @@ export function PanelPengaturan({
     kasbon: true,
   });
   const [ai, setAi] = useState({
-    aktif: true,
-    provider: "openrouter",
-    baseUrl: "https://openrouter.ai/api/v1",
-    apiKey: "",
+    aktif: aiConfig?.aktif ?? true,
+    provider: aiConfig?.baseUrl?.includes("freellm")
+      ? "freellm"
+      : aiConfig?.baseUrl?.includes("11434")
+      ? "ollama"
+      : "openrouter",
+    baseUrl: aiConfig?.baseUrl || "https://openrouter.ai/api/v1",
+    apiKey: aiConfig?.apiKey || "",
     model: "nousresearch/hermes-3-llama-3.1-8b:free",
   });
   const [kasirBaru, setKasirBaru] = useState({ open: false, nama: "", email: "", pin: "" });
@@ -136,13 +142,13 @@ export function PanelPengaturan({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Status Sewa / Lisensi</CardTitle>
-              <CardDescription>Mode aplikasi: {MODE === "saas" ? "Sewa Bulanan (Cloud SaaS)" : "Instalasi Mandiri (Self-Hosted)"}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {MODE === "saas" ? (
+          {MODE === "saas" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Status Sewa / Lisensi</CardTitle>
+                <CardDescription>Mode aplikasi: Sewa Bulanan (Cloud SaaS)</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <Badge variant={sewa.status === "expired" ? "destructive" : "success"}>
@@ -152,17 +158,13 @@ export function PanelPengaturan({
                       {sewa.berakhir ? `Berakhir: ${sewa.berakhir}. ` : ""}Rp 50.000/bulan. Data tersimpan aman di cloud.
                     </p>
                   </div>
-                  <Button variant="outline" size="lg" onClick={() => toast.info("Pembayaran sewa disambungkan di Tahap 4.")}>
+                  <Button variant="outline" size="lg" onClick={() => toast.info("Pembayaran sewa dapat dikelola melalui dashboard SaaS.")}>
                     Perpanjang Sewa
                   </Button>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Lisensi seumur hidup (lifetime) — bebas biaya sewa, data di komputer Anda sendiri, 100% jalan di LAN tanpa internet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* AKUN KASIR */}
@@ -339,7 +341,11 @@ export function PanelPengaturan({
               <Button
                 size="lg"
                 onClick={async () => {
-                  const hasil = await aksiSimpanPengaturanAI({ aktif: ai.aktif });
+                  const hasil = await aksiSimpanPengaturanAI({
+                    aktif: ai.aktif,
+                    apiKey: ai.apiKey,
+                    baseUrl: ai.baseUrl,
+                  });
                   toast[hasil.ok ? "success" : "error"](
                     hasil.ok ? "Konfigurasi AI tersimpan. Hermes siap diajak ngobrol!" : hasil.pesan
                   );

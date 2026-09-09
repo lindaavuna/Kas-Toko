@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BookUser, HandCoins, History, UserPlus } from "lucide-react";
+import { BookUser, FileSpreadsheet, FileText, HandCoins, History, UserPlus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { DialogTerimaPembayaran } from "@/components/kasbon/terima-pembayaran";
 import { useRouter } from "next/navigation";
 import { aksiTambahPelanggan } from "@/lib/server/aksi-katalog";
 import { formatRupiah, formatTanggal, formatWaktu } from "@/lib/format";
+import { unduhCsv, cetakDokumen } from "@/lib/export";
 import type { Customer, Receivable } from "@/lib/types";
 
 export function PanelKasbon({
@@ -51,6 +52,77 @@ export function PanelKasbon({
     }
   }
 
+  function eksporKasbon(kind: "xlsx" | "pdf") {
+    toast.info(`Menyiapkan unduhan rekap kasbon ${kind.toUpperCase()}…`);
+    const tanggalHariIni = new Date().toISOString().slice(0, 10);
+
+    if (kind === "xlsx") {
+      const kolom = [
+        "Nama Pelanggan",
+        "No. Telepon",
+        "No. Struk",
+        "Tanggal Kasbon",
+        "Kasbon Awal (Rp)",
+        "Sudah Bayar (Rp)",
+        "Sisa Hutang (Rp)",
+        "Status",
+      ];
+      const baris = daftar.map((r) => {
+        const pelanggan = customers.find((c) => c.id === r.customerId);
+        const sisa = r.originalAmount - r.paidAmount;
+        const statusLabel =
+          r.status === "paid" ? "Lunas" : r.status === "partial" ? "Cicilan" : "Belum Bayar";
+        return [
+          r.customerName,
+          pelanggan?.phone || "—",
+          r.saleReceipt || "—",
+          formatTanggal(r.createdAt),
+          r.originalAmount,
+          r.paidAmount,
+          sisa,
+          statusLabel,
+        ];
+      });
+
+      // Tambahkan baris total
+      baris.push(["", "", "", "", "", "", "", ""]);
+      baris.push(["TOTAL PIUTANG", "", "", "", "", "", totalPiutang, ""]);
+
+      unduhCsv(`rekap-kasbon-${tanggalHariIni}.csv`, kolom, baris);
+    } else {
+      cetakDokumen({
+        judul: "Rekap Buku Kasbon & Piutang Pelanggan",
+        periode: `Per ${new Date().toLocaleDateString("id-ID", { dateStyle: "long" })}`,
+        ringkasan: [
+          { label: "Total Catatan", nilai: `${daftar.length} transaksi` },
+          {
+            label: "Belum Lunas",
+            nilai: `${daftar.filter((r) => r.status !== "paid").length} orang`,
+          },
+          { label: "Total Sisa Piutang", nilai: formatRupiah(totalPiutang) },
+        ],
+        kolom: ["Nama Pelanggan", "No. HP", "Struk", "Tanggal", "Awal", "Sudah Bayar", "Sisa", "Status"],
+        kolomKanan: [4, 5, 6],
+        baris: daftar.map((r) => {
+          const pelanggan = customers.find((c) => c.id === r.customerId);
+          const sisa = r.originalAmount - r.paidAmount;
+          const statusLabel =
+            r.status === "paid" ? "Lunas" : r.status === "partial" ? "Cicilan" : "Belum Bayar";
+          return [
+            r.customerName,
+            pelanggan?.phone || "—",
+            r.saleReceipt || "—",
+            formatTanggal(r.createdAt),
+            formatRupiah(r.originalAmount),
+            formatRupiah(r.paidAmount),
+            formatRupiah(sisa),
+            statusLabel,
+          ];
+        }),
+      });
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -64,6 +136,14 @@ export function PanelKasbon({
             >
               {aktif ? "Hanya belum lunas ✓" : "Tampilkan semua"}
             </Button>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="outline" className="h-9" onClick={() => eksporKasbon("xlsx")}>
+                <FileSpreadsheet className="size-4 text-success" /> Export Excel
+              </Button>
+              <Button size="sm" variant="outline" className="h-9" onClick={() => eksporKasbon("pdf")}>
+                <FileText className="size-4 text-danger" /> Export PDF
+              </Button>
+            </div>
             <p className="ml-auto text-sm text-muted-foreground">
               Total piutang kasbon:{" "}
               <b className="text-warning font-money">{formatRupiah(totalPiutang)}</b>

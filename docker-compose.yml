@@ -1,17 +1,55 @@
+# ============================================================
+# KasToko POS & Backoffice UMKM — Docker Compose Stack
+# Multi-Container: Next.js Standalone + PostgreSQL 16
+# ============================================================
+
 services:
+  # 1. Aplikasi KasToko (Next.js 16 App Router Standalone)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_MODE: ${NEXT_PUBLIC_APP_MODE:-self-hosted}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:9991}
+    container_name: kastoko-app
+    restart: unless-stopped
+    ports:
+      - "9991:9991"
+    environment:
+      NODE_ENV: production
+      PORT: 9991
+      APP_MODE: ${APP_MODE:-self-hosted}
+      NEXT_PUBLIC_APP_MODE: ${NEXT_PUBLIC_APP_MODE:-self-hosted}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:9991}
+      # Koneksi database internal antar container Docker
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kastoko}:${POSTGRES_PASSWORD:-rahasia_kastoko_123}@postgres:5432/${POSTGRES_DB:-kastoko}
+      SESSION_SECRET: ${SESSION_SECRET:-kunci_rahasia_sesi_kastoko_32_karakter_aman}
+      AI_PROVIDER_BASE_URL: ${AI_PROVIDER_BASE_URL:-https://openrouter.ai/api/v1}
+      AI_PROVIDER_API_KEY: ${AI_PROVIDER_API_KEY:-}
+      AI_MODEL_NAME: ${AI_MODEL_NAME:-nousresearch/hermes-3-llama-3.1-8b:free}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data/uploads:/app/public/uploads
+    networks:
+      - kastoko-net
+
+  # 2. Database PostgreSQL 16 Persisten
   postgres:
     image: postgres:16-alpine
     container_name: kastoko-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-kastoko}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD wajib ada di .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rahasia_kastoko_123}
       POSTGRES_DB: ${POSTGRES_DB:-kastoko}
-      # Zona waktu sesi agar tanggal lokal kasir konsisten (WIB)
+      # Zona waktu WIB untuk keselarasan jam transaksi kasir
       TZ: Asia/Jakarta
       PGTZ: Asia/Jakarta
     ports:
-      # 5433 host -> 5432 container, aman dari bentrok Postgres default 5432
+      # Expose port 5433 ke host (aman dari bentrok default Postgres 5432 lokal)
       - "5433:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
@@ -20,3 +58,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - kastoko-net
+
+networks:
+  kastoko-net:
+    driver: bridge

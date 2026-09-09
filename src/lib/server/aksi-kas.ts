@@ -133,15 +133,20 @@ export async function aksiTambahSupplier(nama: string, telepon?: string): Promis
   return r.ok ? { ok: true, pesan: `${nama.trim()} ditambahkan ke daftar supplier.` } : r;
 }
 
-export async function aksiSimpanPengaturanAI(input: { aktif: boolean }): Promise<HasilAksi> {
+export async function aksiSimpanPengaturanAI(input: {
+  aktif: boolean;
+  apiKey?: string;
+  baseUrl?: string;
+}): Promise<HasilAksi> {
   const r = await jalankan(async () => {
     const ctx = await butuhKonteks();
     if (ctx.peran !== "owner") throw new GagalBisnis("Hanya pemilik yang bisa mengubah AI.");
     const { tanyaPakaiSesi } = await import("./db");
-    await tanyaPakaiSesi(ctx.userId, "update stores set ai_enabled = $2 where id = $1", [
-      ctx.storeId,
-      input.aktif,
-    ]);
+    await tanyaPakaiSesi(
+      ctx.userId,
+      "update stores set ai_enabled = $2, custom_ai_api_key = $3, custom_ai_base_url = $4 where id = $1",
+      [ctx.storeId, input.aktif, input.apiKey?.trim() || null, input.baseUrl?.trim() || null]
+    );
   });
   return r.ok ? { ok: true, pesan: "Pengaturan asisten AI disimpan." } : r;
 }
