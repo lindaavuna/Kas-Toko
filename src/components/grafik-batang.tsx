@@ -21,8 +21,8 @@ export function GrafikBatang({
   return (
     <div>
       <div className="flex h-40 items-end gap-1.5 sm:gap-3">
-        {data.map((d) => (
-          <div key={d.label} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-0.5">
+        {data.map((d, i) => (
+          <div key={`${d.label}-${i}`} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-0.5">
             <div
               className={`w-1/2 max-w-8 rounded-t ${warna} transition-all group-hover:opacity-80`}
               style={{ height: `${Math.max((d.nilai / maks) * 100, 2)}%` }}
@@ -41,8 +41,8 @@ export function GrafikBatang({
         ))}
       </div>
       <div className="mt-1.5 flex gap-1.5 sm:gap-3">
-        {data.map((d) => (
-          <p key={d.label} className="min-w-0 flex-1 truncate text-center text-[10px] text-muted-foreground">
+        {data.map((d, i) => (
+          <p key={`${d.label}-${i}`} className="min-w-0 flex-1 truncate text-center text-[10px] text-muted-foreground">
             {d.label}
           </p>
         ))}

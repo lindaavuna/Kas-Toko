@@ -39,11 +39,18 @@ export function DasborPanel({
   tren: TitikHarian[];
   terbaru: Sale[];
 }) {
-  const data = tren.map((t) => ({
-    label: new Date(t.tanggal + "T10:00").toLocaleDateString("id-ID", { weekday: "short" }),
-    nilai: t.omset,
-    nilai2: t.pengeluaran,
-  }));
+  const data = tren.map((t) => {
+    const raw = String(t.tanggal || "").slice(0, 10);
+    const d = new Date(raw + "T12:00:00");
+    const label = !isNaN(d.getTime())
+      ? d.toLocaleDateString("id-ID", { weekday: "short" })
+      : raw;
+    return {
+      label,
+      nilai: t.omset,
+      nilai2: t.pengeluaran,
+    };
+  });
 
   return (
     <div className="space-y-4">

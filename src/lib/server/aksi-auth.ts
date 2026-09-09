@@ -69,22 +69,45 @@ export async function aksiMasukKasir(input: { email: string; pin: string }): Pro
   const data = skemaPin.safeParse(input);
   if (!data.success) return { ok: false, pesan: data.error.issues[0].message };
 
-  const found = await tanya<{ id: string }>("select id from kas_find_user_by_email($1)", [
-    data.data.email,
-  ]);
-  if (found.length === 0) return { ok: false, pesan: "Email kasir tidak ditemukan di toko ini." };
+  const inputEmail = data.data.email.trim().toLowerCase();
 
-  const pin = await tanya<{ pin: string | null }>(
-    "select kas_user_pin_hash($1) as pin from (select 1) x",
-    [found[0].id]
-  );
-  if (pin.length === 0 || !cocokKredensial(data.data.pin, pin[0].pin)) {
-    return { ok: false, pesan: "PIN kasir salah. Silakan coba lagi." };
+  // 1. Coba verifikasi langsung berdasarkan email akun kasir (mis. siti@tokoberkah.id)
+  const found = await tanya<{ id: string }>("select id from kas_find_user_by_email($1)", [inputEmail]);
+  if (found.length > 0) {
+    const pin = await tanya<{ pin: string | null }>(
+      "select kas_user_pin_hash($1) as pin from (select 1) x",
+      [found[0].id]
+    );
+    if (pin.length > 0 && cocokKredensial(data.data.pin, pin[0].pin)) {
+      const hasil = await mulaiSesi(found[0].id);
+      if (hasil.ok) hasil.pesan = "Halo, selamat berjualan!";
+      return hasil;
+    }
   }
 
-  const hasil = await mulaiSesi(found[0].id);
-  if (hasil.ok) hasil.pesan = "Halo, selamat berjualan!";
-  return hasil;
+  // 2. Jika user memasukkan email toko / pemilik (mis. budi@tokoberkah.id) dengan PIN kasirnya:
+  // Cari seluruh kasir aktif di toko yang sama yang memiliki PIN cocok
+  const kasirToko = await tanya<{ user_id: string; cashier_pin: string }>(
+    `select sm.user_id, sm.cashier_pin
+     from store_members sm
+     join stores s on s.id = sm.store_id
+     where sm.store_id in (
+       select m.store_id from store_members m
+       join users u on u.id = m.user_id
+       where lower(u.email) = $1
+     ) and sm.status = 'active'`,
+    [inputEmail]
+  );
+
+  for (const k of kasirToko) {
+    if (cocokKredensial(data.data.pin, k.cashier_pin)) {
+      const hasil = await mulaiSesi(k.user_id);
+      if (hasil.ok) hasil.pesan = "Halo, selamat berjualan!";
+      return hasil;
+    }
+  }
+
+  return { ok: false, pesan: "Email toko atau PIN kasir tidak cocok. Silakan coba lagi." };
 }
 
 const skemaDaftar = z.object({

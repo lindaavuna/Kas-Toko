@@ -470,7 +470,7 @@ export interface TitikHarian {
 export async function trenHarian(ctx: Konteks, mulai: string, akhir: string): Promise<TitikHarian[]> {
   const rows = await tanya<Row>(
     ctx.userId,
-    `select h.t::text as tanggal,
+    `select substring(h.t::text, 1, 10) as tanggal,
        coalesce((select sum(total) from sales s
          where s.store_id=$1 and s.status<>'void' and s.created_at::date between $2 and $3 and s.created_at::date=h.t),0) as omset,
        coalesce((select sum(si.total - p.purchase_price*si.quantity) from sales s

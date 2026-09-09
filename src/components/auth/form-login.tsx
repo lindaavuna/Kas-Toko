@@ -121,11 +121,11 @@ export function FormLogin() {
           <TabsContent value="kasir" className="mt-5">
             <form onSubmit={masukKasir} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email-kasir">Email Toko</Label>
+                <Label htmlFor="email-kasir">Email Toko / Akun Kasir</Label>
                 <Input
                   id="email-kasir"
                   type="email"
-                  placeholder="siti@tokoberkah.id"
+                  placeholder="siti@tokoberkah.id atau budi@tokoberkah.id"
                   value={emailKasir}
                   onChange={(e) => setEmailKasir(e.target.value)}
                   autoComplete="username"
@@ -148,6 +148,9 @@ export function FormLogin() {
                     required
                   />
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Demo kasir: <span className="font-semibold text-foreground">siti@tokoberkah.id</span> (PIN 1234) atau masukkan email toko dengan PIN kasir Anda.
+                </p>
               </div>
               <Button type="submit" variant="success" className="w-full" size="lg" disabled={proses}>
                 <Smartphone className="size-4" />
