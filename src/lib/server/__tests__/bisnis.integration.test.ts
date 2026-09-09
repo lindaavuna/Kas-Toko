@@ -4,11 +4,16 @@ import { randomUUID } from "node:crypto";
 
 // Arahkan pool ke kastoko_test (pool db.ts dibuat malas — cukup set di sini).
 const envLokal: Record<string, string> = {};
-for (const baris of readFileSync(".env.local", "utf8").split("\n")) {
-  const m = baris.match(/^([A-Z0-9_]+)=(.*)$/);
-  if (m) envLokal[m[1]] = m[2].trim();
+if (existsSync(".env.local")) {
+  for (const baris of readFileSync(".env.local", "utf8").split("\n")) {
+    const m = baris.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (m) envLokal[m[1]] = m[2].trim();
+  }
 }
-process.env.DATABASE_URL = `postgresql://kastoko_app:${envLokal.POSTGRES_APP_PASSWORD}@localhost:5433/kastoko_test`;
+const appPass = envLokal.POSTGRES_APP_PASSWORD || process.env.POSTGRES_APP_PASSWORD || "rahasia_kastoko_app";
+if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.includes("kastoko_test")) {
+  process.env.DATABASE_URL = `postgresql://kastoko_app:${appPass}@localhost:5433/kastoko_test`;
+}
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { tanya, tanyaPakaiSesi } from "../db";
