@@ -168,7 +168,7 @@ export function FormLogin() {
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Toko baru?{" "}
             <Link href="/register" className="font-medium text-primary underline-offset-4 hover:underline">
-              Daftar gratis (uji coba 14 hari)
+              Daftar gratis (uji coba 7 hari)
             </Link>
           </p>
         )}

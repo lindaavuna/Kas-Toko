@@ -4,7 +4,7 @@ import { FormRegister } from "@/components/auth/form-register";
 export const metadata: Metadata = {
   title: "Daftar Toko",
   description:
-    "Daftarkan toko Anda di KasToko — aktif langsung dengan masa uji coba gratis 14 hari.",
+    "Daftarkan toko Anda di KasToko — aktif langsung dengan masa uji coba gratis 7 hari.",
   openGraph: {
     title: "Daftar Toko Baru — KasToko",
     description: "3 menit langsung bisa jualan. Tanpa perlu belajar berhari-hari.",

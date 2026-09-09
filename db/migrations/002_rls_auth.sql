@@ -87,7 +87,7 @@ $$;
 -- Registrasi toko baru: atomik bikin user + store + keanggotaan owner.
 create or replace function public.kas_register_store(
   p_full_name text, p_email text, p_password_hash text, p_pin_hash text,
-  p_store_name text, p_address text, p_phone text, p_trial_days int default 14
+  p_store_name text, p_address text, p_phone text, p_trial_days int default 7
 ) returns table (user_id uuid, store_id uuid)
 language plpgsql security definer set search_path = public as $$
 declare
