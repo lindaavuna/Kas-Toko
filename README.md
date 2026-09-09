@@ -1,5 +1,11 @@
 # 🛒 KasToko — Sistem Kasir & Manajemen Toko Pintar UMKM
 
+[![CI KasToko](https://github.com/lindaavuna/Kas-Toko/actions/workflows/ci.yml/badge.svg)](https://github.com/lindaavuna/Kas-Toko/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3.4-black.svg)](https://nextjs.org/)
+[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+
+
 KasToko adalah sistem Point of Sale (POS) dan manajemen operasional toko ritel modern yang dirancang khusus untuk toko kelontong, sembako, dan UMKM di Indonesia. Mengutamakan kecepatan kasir kilat, keandalan tanpa koneksi internet (Offline-First), kompatibilitas hardware Bluetooth thermal, dan asisten AI pintar.
 
 ---

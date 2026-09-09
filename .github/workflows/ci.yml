@@ -1,0 +1,59 @@
+name: CI KasToko
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test-and-build:
+    name: Uji Coba & Kompilasi Produksi
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kastoko
+          POSTGRES_PASSWORD: rahasia_kastoko_ci
+          POSTGRES_DB: kastoko
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📥 Checkout Repositori
+        uses: actions/checkout@v4
+
+      - name: 🟢 Pasang Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: 📦 Instal Dependensi
+        run: npm ci
+
+      - name: 🛠️ Siapkan Role Database & Migrasi
+        env:
+          PGPASSWORD: rahasia_kastoko_ci
+        run: |
+          psql -h localhost -p 5433 -U kastoko -d kastoko -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'kastoko_app') THEN CREATE ROLE kastoko_app WITH LOGIN PASSWORD 'rahasia_kastoko_app'; END IF; END \$\$;"
+
+      - name: 🧪 Jalankan Pengujian (Vitest 64/64 Tests)
+        env:
+          DATABASE_ADMIN_URL: postgresql://kastoko:rahasia_kastoko_ci@localhost:5433/kastoko
+          DATABASE_URL: postgresql://kastoko_app:rahasia_kastoko_app@localhost:5433/kastoko_test
+          SESSION_SECRET: rahasia_sesi_ci_testing_minimal_32_karakter_aman
+        run: npm run test
+
+      - name: 🏗️ Kompilasi Produksi (Next.js Standalone Build)
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: production
+        run: npm run build
