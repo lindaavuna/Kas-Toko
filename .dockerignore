@@ -14,5 +14,6 @@ data
 uploads
 backups
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+

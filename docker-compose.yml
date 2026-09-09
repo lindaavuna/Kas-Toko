@@ -52,6 +52,7 @@ services:
       # Expose port 5433 ke host (aman dari bentrok default Postgres 5432 lokal)
       - "5433:5432"
     volumes:
+      - ./db/init-complete.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kastoko} -d ${POSTGRES_DB:-kastoko}"]

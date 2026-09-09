@@ -92,15 +92,16 @@ KasToko menyertakan script launcher instan untuk mempermudah toko:
 
 ---
 
-## 🐳 Menjalankan dengan Docker Compose
+## 🐳 Menjalankan dengan Docker Compose (Turnkey Ready)
 
 Jalankan seluruh stack (Next.js Standalone + PostgreSQL 16) hanya dengan satu perintah:
 ```bash
 docker compose up -d --build
 ```
-Stack akan mengaktifkan:
-- `kastoko-app`: Port `9991`
-- `kastoko-db`: Port `5433` (PostgreSQL 16)
+Database otomatis menginisialisasi skema DDL lengkap, RLS, index, serta data demo produk & akun kasir via `db/init-complete.sql` tanpa perlu perintah tambahan:
+- **Aplikasi KasToko**: `http://localhost:9991`
+- **Database PostgreSQL 16**: Port `5433`
+- **Akun Demo**: `budi@tokoberkah.id` (Kata Sandi: `rahasia`) & `siti@tokoberkah.id` (PIN: `1234`)
 
 ---
 
@@ -131,4 +132,6 @@ npm run build
 ---
 
 ## 📄 Lisensi
-Hak Cipta © 2026 KasToko Team. Didistribusikan di bawah lisensi MIT.
+
+Hak Cipta © 2026 [KasToko Contributors](./LICENSE). Didistribusikan di bawah lisensi resmi [MIT License](./LICENSE).
+
