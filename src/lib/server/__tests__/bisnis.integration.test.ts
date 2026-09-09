@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 
 // Arahkan pool ke kastoko_test (pool db.ts dibuat malas — cukup set di sini).
