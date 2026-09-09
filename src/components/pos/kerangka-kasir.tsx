@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Banknote,
   LayoutDashboard,
@@ -9,6 +11,9 @@ import {
   Printer,
   ShoppingCart,
   BookUser,
+  Wifi,
+  WifiOff,
+  RefreshCw,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,16 +34,22 @@ import { DialogStruk } from "@/components/pos/struk-dialog";
 import { useUiStore } from "@/lib/stores/ui-store";
 import { formatWaktu } from "@/lib/format";
 import { aksiKeluar } from "@/lib/server/aksi-auth";
-import type { Customer, InfoToko, Petugas } from "@/lib/types";
+import {
+  cacheKatalogOffline,
+  hitungAntreanOffline,
+  sinkronkanAntreanOffline,
+} from "@/lib/offline/sinkron";
+import type { Customer, InfoToko, Petugas, Product } from "@/lib/types";
 
 /**
- * Rangka layar kasir: header fullscreen + dialog global (shift, bayar, struk).
- * Snapshot utk Hermes diambil server terpisah; di sini cuma tempel angka.
+ * Rangka layar kasir: header fullscreen + dialog global (shift, bayar, struk)
+ * + indikator online/offline & sinkronisasi otomatis.
  */
 export function KerangkaKasir({
   petugas,
   toko,
   pelanggan,
+  produk = [],
   shiftBuka,
   shiftSejak,
   snapshot,
@@ -47,6 +58,7 @@ export function KerangkaKasir({
   petugas: Petugas;
   toko: InfoToko;
   pelanggan: Customer[];
+  produk?: Product[];
   shiftBuka: boolean;
   shiftSejak?: string;
   snapshot: SnapshotHermes;
@@ -54,10 +66,69 @@ export function KerangkaKasir({
 }) {
   const router = useRouter();
   const setDialogShift = useUiStore((s) => s.setDialogShift);
+  const [online, setOnline] = useState<boolean>(true);
+  const [antrean, setAntrean] = useState<number>(0);
+  const [sedangSync, setSedangSync] = useState<boolean>(false);
 
   const statusShift = shiftBuka
     ? { label: `Kasir Buka sejak ${shiftSejak ? formatWaktu(shiftSejak).slice(11) : "…"}`, buka: true }
     : { label: "Kasir Belum Dibuka", buka: false };
+
+  const cekStatusOffline = useCallback(async () => {
+    const jumlah = await hitungAntreanOffline();
+    setAntrean(jumlah);
+  }, []);
+
+  const lakukanSinkronisasi = useCallback(async () => {
+    if (sedangSync) return;
+    setSedangSync(true);
+    try {
+      const hasil = await sinkronkanAntreanOffline();
+      await cekStatusOffline();
+      if (hasil.total > 0) {
+        if (hasil.gagal === 0) {
+          toast.success(hasil.pesan);
+        } else {
+          toast.warning(hasil.pesan);
+        }
+        router.refresh();
+      }
+    } finally {
+      setSedangSync(false);
+    }
+  }, [sedangSync, cekStatusOffline, router]);
+
+  useEffect(() => {
+    setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+
+    function handleOnline() {
+      setOnline(true);
+      toast.success("Koneksi internet kembali aktif. Menyinkronkan data...");
+      lakukanSinkronisasi();
+    }
+
+    function handleOffline() {
+      setOnline(false);
+      toast.warning("Koneksi terputus. KasToko otomatis berjalan dalam Mode Offline.");
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Cache produk dan pelanggan ke IndexedDB
+    if (produk.length > 0 || pelanggan.length > 0) {
+      cacheKatalogOffline(produk, pelanggan);
+    }
+
+    cekStatusOffline();
+    const interval = setInterval(cekStatusOffline, 15000);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      clearInterval(interval);
+    };
+  }, [produk, pelanggan, cekStatusOffline, lakukanSinkronisasi]);
 
   async function logout() {
     await aksiKeluar();
@@ -81,6 +152,35 @@ export function KerangkaKasir({
           <Banknote className="size-3" />
           {statusShift.label}
         </Badge>
+
+        {/* Status Indikator Online/Offline & Outbox */}
+        <div className="ml-2 hidden items-center gap-1 md:flex">
+          {online ? (
+            <Badge
+              variant="outline"
+              className={`cursor-pointer gap-1 transition text-xs ${
+                antrean > 0 ? "border-warning text-warning" : "border-success/60 text-success"
+              }`}
+              onClick={lakukanSinkronisasi}
+              title={antrean > 0 ? `${antrean} transaksi offline menunggu sinkronisasi` : "Online — Siap transaksi"}
+            >
+              <Wifi className="size-3" />
+              <span>{antrean > 0 ? `${antrean} offline` : "Online"}</span>
+              {antrean > 0 && (
+                <RefreshCw className={`size-3 ${sedangSync ? "animate-spin" : ""}`} />
+              )}
+            </Badge>
+          ) : (
+            <Badge
+              variant="warning"
+              className="gap-1 text-xs"
+              title="Koneksi terputus. Transaksi akan disimpan di IndexedDB perangkat."
+            >
+              <WifiOff className="size-3" />
+              <span>Offline ({antrean})</span>
+            </Badge>
+          )}
+        </div>
 
         <div className="ml-auto flex items-center gap-1.5 md:gap-2">
           <HermesChat petugas={petugas} snapshot={snapshot} variant="header" />
@@ -145,7 +245,7 @@ export function KerangkaKasir({
       <main className="flex-1">{children}</main>
 
       <DialogShift toko={toko} />
-      <DialogBayar pelanggan={pelanggan} />
+      <DialogBayar pelanggan={pelanggan} petugas={petugas} />
       <DialogStruk toko={toko} pelanggan={pelanggan} />
     </div>
   );

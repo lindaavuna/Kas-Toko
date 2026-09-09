@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bot, ChevronDown, Send, Sparkles } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,19 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { aksiCatatPengeluaran } from "@/lib/server/aksi-kas";
 import { formatRupiah } from "@/lib/format";
+import { aksiCatatPengeluaran } from "@/lib/server/aksi-kas";
 import type { Petugas } from "@/lib/types";
 
-interface Pesan {
-  dari: "user" | "hermes";
-  teks: string;
-  fungsi?: string;
-}
-
-/** Potongan data toko utk menjawab pertanyaan (diambil server tiap render) */
 export interface SnapshotHermes {
   omsetHari: number;
   labaHari: number;
@@ -33,56 +26,58 @@ export interface SnapshotHermes {
   kasbonBelumLunas: { nama: string; sisa: number }[];
 }
 
-function labelHari(): string {
-  return new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" });
+interface PesanChat {
+  dari: "user" | "hermes";
+  teks: string;
+  fungsi?: string;
 }
 
 export function HermesChat({
   petugas,
   snapshot,
-  variant = "fab",
+  variant = "floating",
 }: {
   petugas: Petugas;
   snapshot: SnapshotHermes;
-  variant?: "fab" | "header";
+  variant?: "floating" | "header";
 }) {
   const router = useRouter();
   const [buka, setBuka] = useState(false);
-  const [pesan, setPesan] = useState<Pesan[]>([
-    {
-      dari: "hermes",
-      teks: `Halo ${petugas.nama}! Saya Hermes, asisten toko Anda. Tanya pakai bahasa sehari-hari, misal "omset hari ini berapa?".`,
-    },
-  ]);
   const [input, setInput] = useState("");
   const [sedangKetik, setSedangKetik] = useState(false);
-  const bawahRef = useRef<HTMLDivElement>(null);
+  const [pesan, setPesan] = useState<PesanChat[]>([
+    {
+      dari: "hermes",
+      teks: `Halo ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda. Mau tanya omset, cek stok tipis, atau catat pengeluaran hari ini?`,
+    },
+  ]);
+
+  const bawahRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     bawahRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [pesan, sedangKetik]);
 
-  async function jawab(teksUser: string): Promise<Pesan[]> {
-    const q = teksUser.toLowerCase();
-    const pemilik = petugas.peran === "owner";
-    const keluar = (fungsi: string, teks: string): Pesan[] => [{ dari: "hermes", fungsi, teks }];
+  const pemilik = petugas.peran === "owner";
 
-    if (/(omset|omzet|pendapatan)/.test(q)) {
-      if (!pemilik)
-        return keluar(
-          "get_daily_sales()",
-          "Maaf, laporan omset hanya bisa diakses Pemilik Toko. Saya bisa bantu panduan kasir, cek stok, atau catat pengeluaran."
-        );
+  async function jawabLokal(teksUser: string): Promise<PesanChat[]> {
+    const q = teksUser.toLowerCase();
+
+    function keluar(fn: string, balasan: string): PesanChat[] {
+      return [{ dari: "hermes", fungsi: fn || undefined, teks: balasan }];
+    }
+
+    if (/(omset|penjualan|pemasukan)/.test(q)) {
       return keluar(
-        "get_daily_sales()",
-        `Omset ${labelHari()}: ${formatRupiah(snapshot.omsetHari)}. Perkiraan laba kotor hari ini ${formatRupiah(snapshot.labaHari)}. 🔥`
+        "ambil_omset_harian()",
+        `Omset hari ini: ${formatRupiah(snapshot.omsetHari)}. Estimasi laba kotor: ${formatRupiah(snapshot.labaHari)}. 🔥`
       );
     }
 
     if (/(laba|keuntungan|untung)/.test(q)) {
-      if (!pemilik) return keluar("get_daily_sales()", "Informasi laba hanya untuk Pemilik Toko ya.");
+      if (!pemilik) return keluar("ambil_omset_harian()", "Informasi laba hanya untuk Pemilik Toko ya.");
       return keluar(
-        "get_daily_sales()",
+        "ambil_omset_harian()",
         `Perkiraan laba kotor hari ini ${formatRupiah(snapshot.labaHari)}. Rinciannya ada di menu Laporan Keuangan.`
       );
     }
@@ -90,24 +85,24 @@ export function HermesChat({
     if (/(stok|habis|menipis|tipis|kulakan)/.test(q)) {
       const tipis = snapshot.stokTipis;
       return keluar(
-        "get_low_stock_products()",
+        "ambil_produk_menipis()",
         tipis.length === 0
           ? "Semua stok aman, belum ada yang menipis. Siap-siap kulakan sebelum akhir pekan ya!"
           : `Barang yang perlu segera dibeli:\n${tipis
               .map((p) => `• ${p.name} — sisa ${p.stockQty} (minimum ${p.minStock})`)
-              .join("\n")}\n\nRekomendasi: hubungi UD Sinar Mas hari ini.`
+              .join("\n")}`
       );
     }
 
     if (/(kasbon|hutang pembeli|piutang|belum.?lunas)/.test(q)) {
       if (!pemilik)
         return keluar(
-          "get_debtor_list()",
+          "ambil_daftar_kasbon()",
           "Buku kasbon penuh hanya untuk Pemilik Toko. Kalau ada pelanggan bayar cicilan, catat lewat Loket Kasbon ya."
         );
       const aktif = snapshot.kasbonBelumLunas;
       return keluar(
-        "get_debtor_list()",
+        "ambil_daftar_kasbon()",
         aktif.length === 0
           ? "Wah, tidak ada pelanggan yang punya kasbon. Semua sudah lunas!"
           : `Yang masih punya kasbon:\n${aktif
@@ -116,7 +111,7 @@ export function HermesChat({
       );
     }
 
-    if (/(catat|beli|keluar|pengeluaran)/.test(q) && /(bensin|listrik|token|air|sampah|konsumsi|bensin|olx|beli)/.test(q)) {
+    if (/(catat|beli|keluar|pengeluaran)/.test(q) && /(bensin|listrik|token|air|sampah|konsumsi|beli|plastik)/.test(q)) {
       const cocok = teksUser.match(/(\d{1,3}(?:[.,]\d{3})+|\d+)\s*(ribu|rb|k)?/i);
       let nominal = 0;
       if (cocok) {
@@ -125,7 +120,7 @@ export function HermesChat({
       }
       if (!nominal) {
         return keluar(
-          "create_expense()",
+          "catat_pengeluaran_toko()",
           'Boleh, sebutkan nominalnya. Contoh: "Tolong catat beli bensin Rp 20.000 dari kasir".'
         );
       }
@@ -134,33 +129,64 @@ export function HermesChat({
           .replace(/tolong|cat(at|kan)?|dari kas(ir)?|rp/gi, " ")
           .replace(/\d|[.,]/g, "")
           .trim()
-          .slice(0, 40) || "Pengeluaran lewat chat Hermes";
+          .slice(0, 40) || "Pengeluaran kasir";
       const hasil = await aksiCatatPengeluaran({ title: judul, amount: nominal });
-      if (!hasil.ok) return keluar("create_expense()", `Hmm, gagal: ${hasil.pesan}`);
+      if (!hasil.ok) return keluar("catat_pengeluaran_toko()", `Hmm, gagal: ${hasil.pesan}`);
       router.refresh();
       return keluar(
-        "create_expense()",
-        `Siap! Pengeluaran "${judul}" ${formatRupiah(nominal)} sudah saya catat dan memotong kas laci shift berjalan. ✔`
+        "catat_pengeluaran_toko()",
+        `Siap! Pengeluaran "${judul}" ${formatRupiah(nominal)} sudah dicatat dan memotong kas laci shift berjalan. ✔`
       );
     }
 
-    if (/(bantu|panduan|cara|gimana|bagaimana|scan|struck|struk)/.test(q)) {
-      return keluar(
-        "",
-        'Contoh yang bisa Anda tanyakan:\n• "Omset hari ini berapa?"\n• "Barang apa yang stoknya mau habis?"\n• "Siapa saja yang punya kasbon?"\n• "Catat beli bensin Rp 20.000"\n\nTips kasir: sentuh foto barang → Bayar → Uang Pas → struk otomatis. Scan barcode tinggal pencet tombol 📷.'
-      );
-    }
-
-    return keluar("", 'Hmm, saya belum paham. Coba "omset hari ini" atau "cek stok menipis".');
+    return keluar(
+      "",
+      'Contoh yang bisa ditanyakan:\n• "Omset hari ini berapa?"\n• "Barang apa yang stoknya mau habis?"\n• "Siapa saja yang punya kasbon?"\n• "Catat beli bensin Rp 20.000"'
+    );
   }
 
   async function kirim(teks?: string) {
     const isi = (teks ?? input).trim();
     if (!isi) return;
     setInput("");
-    setPesan((p) => [...p, { dari: "user", teks: isi }]);
+    const riwayatBaru = [...pesan, { dari: "user" as const, teks: isi }];
+    setPesan(riwayatBaru);
     setSedangKetik(true);
-    const jawaban = await jawab(isi);
+
+    try {
+      // Hubungi endpoint server Hermes API
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: riwayatBaru.map((m) => ({
+            role: m.dari === "user" ? "user" : "assistant",
+            content: m.teks,
+          })),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.content) {
+          setPesan((p) => [
+            ...p,
+            {
+              dari: "hermes",
+              teks: data.content,
+              fungsi: data.functionCalled,
+            },
+          ]);
+          setSedangKetik(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback lokal jika fetch error atau server unreachable
+    }
+
+    // Fallback eksekusi lokal
+    const jawaban = await jawabLokal(isi);
     setSedangKetik(false);
     setPesan((p) => [...p, ...jawaban]);
   }
@@ -196,7 +222,7 @@ export function HermesChat({
             </div>
           ))}
           {sedangKetik && (
-            <p className="text-xs text-muted-foreground italic">Hermes sedang memanggil fungsi toko…</p>
+            <p className="text-xs text-muted-foreground italic">Hermes sedang menganalisis toko…</p>
           )}
           <div ref={bawahRef} />
         </div>
@@ -223,7 +249,7 @@ export function HermesChat({
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ngobrol santai saja…"
+          placeholder="Tanya omset, stok, atau catat pengeluaran…"
           className="h-11"
           aria-label="Pesan untuk Hermes"
         />
@@ -246,7 +272,7 @@ export function HermesChat({
               <DialogTitle className="flex items-center gap-2 text-base">
                 <Sparkles className="size-4 text-primary" />
                 Asisten Toko Hermes
-                <Badge variant="secondary" className="ml-1 text-[10px]">Hermes · Nous Research</Badge>
+                <Badge variant="secondary" className="ml-1 text-[10px]">Hermes 3 · Nous Research</Badge>
               </DialogTitle>
               <DialogDescription className="sr-only">
                 Tanya omset, cek stok, dan catat pengeluaran lewat chat bahasa Indonesia.
@@ -267,7 +293,7 @@ export function HermesChat({
             <DialogTitle className="flex items-center gap-2 text-base">
               <Sparkles className="size-4 text-primary" />
               Asisten Toko Hermes
-              <Badge variant="secondary" className="ml-1 text-[10px]">Hermes · Nous Research</Badge>
+              <Badge variant="secondary" className="ml-1 text-[10px]">Hermes 3 · Nous Research</Badge>
             </DialogTitle>
             <DialogDescription className="sr-only">
               Tanya omset, cek stok, dan catat pengeluaran lewat chat bahasa Indonesia.
@@ -286,4 +312,3 @@ export function HermesChat({
     </>
   );
 }
-

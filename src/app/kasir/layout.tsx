@@ -36,6 +36,7 @@ export default async function KasirLayout({ children }: { children: React.ReactN
       }}
       toko={{ nama: toko.nama, alamat: toko.alamat, telepon: toko.telepon, kakiStruk: toko.kakiStruk }}
       pelanggan={pelanggan}
+      produk={produk}
       shiftBuka={!!shift}
       shiftSejak={shift?.openedAt}
       snapshot={{

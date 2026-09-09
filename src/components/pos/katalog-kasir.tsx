@@ -1,21 +1,34 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Camera, Layers, PackageX, Search, ShoppingBasket } from "lucide-react";
+import {
+  Camera,
+  Layers,
+  PackageX,
+  Search,
+  ShoppingBasket,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { KeranjangPanel } from "@/components/pos/keranjang-panel";
+import { BarcodeListener } from "@/components/pos/barcode-listener";
 import { useKeranjangStore } from "@/lib/stores/keranjang-store";
 import { useUiStore } from "@/lib/stores/ui-store";
 import { formatRupiah } from "@/lib/format";
@@ -25,12 +38,12 @@ export function KatalogKasir({
   produk,
   kategori,
   shiftBuka,
-  peranKasir,
+  peranKasir = false,
 }: {
   produk: Product[];
   kategori: Category[];
   shiftBuka: boolean;
-  peranKasir: boolean;
+  peranKasir?: boolean;
 }) {
   const [cari, setCari] = useState("");
   const [kategoriAktif, setKategoriAktif] = useState<string>("");
@@ -61,6 +74,42 @@ export function KatalogKasir({
 
   const stokTipis = produk.filter((p) => p.isActive && p.stockQty <= p.minStock);
 
+  const pilihProduk = useCallback(
+    (p: Product) => {
+      if (p.stockQty <= 0) {
+        toast.error(`Stok ${p.name} habis. Catat barang masuk dulu.`);
+        return;
+      }
+      if (p.units && p.units.length > 1) {
+        setProdukSatuan(p);
+        return;
+      }
+      tambahProduk(p);
+      toast.success(`${p.name} masuk keranjang`, { duration: 1200 });
+    },
+    [tambahProduk]
+  );
+
+  const handleScanBarcode = useCallback(
+    (barcode: string) => {
+      const q = barcode.trim().toLowerCase();
+      const cocok = produk.find(
+        (p) =>
+          p.isActive &&
+          (String(p.barcode ?? "").toLowerCase() === q || p.sku.toLowerCase() === q)
+      );
+
+      if (!cocok) {
+        toast.error(`Barcode "${barcode}" tidak ditemukan di katalog.`);
+        return;
+      }
+
+      toast.info(`📷 Barcode scan: ${cocok.name}`);
+      pilihProduk(cocok);
+    },
+    [produk, pilihProduk]
+  );
+
   function tekanEnter(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
     const q = cari.trim();
@@ -77,29 +126,17 @@ export function KatalogKasir({
     setCari("");
   }
 
-  function pilihProduk(p: Product) {
-    if (p.stockQty <= 0) {
-      toast.error(`Stok ${p.name} habis. Catat barang masuk dulu.`);
-      return;
-    }
-    if (p.units && p.units.length > 1) {
-      setProdukSatuan(p);
-      return;
-    }
-    tambahProduk(p);
-    toast.success(`${p.name} masuk keranjang`, { duration: 1200 });
-  }
-
   function simulasiScan() {
     const berscan = produk.filter((p) => p.barcode && p.isActive && p.stockQty > 0);
     const target = berscan[Math.floor(Math.random() * berscan.length)];
     if (!target) return;
-    toast.info(`📷 Barcode ${target.barcode} dikenali: ${target.name}`);
-    tambahProduk(target);
+    handleScanBarcode(String(target.barcode));
   }
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)]">
+      <BarcodeListener onScan={handleScanBarcode} />
+
       <section className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-2 border-b bg-card p-3">
           <div className="relative flex-1">
@@ -111,6 +148,7 @@ export function KatalogKasir({
               placeholder="Cari nama barang / barcode… (Enter = tambah)"
               className="h-11 pl-9"
               aria-label="Cari produk"
+              data-barcode-catcher="true"
             />
           </div>
           <Button size="lg" variant="outline" className="h-11 shrink-0" onClick={simulasiScan} aria-label="Simulasi scan barcode">

@@ -67,6 +67,8 @@ export interface CartLine {
   emoji: string;
 }
 
+export type CartItem = SaleItem;
+
 export interface SaleItem {
   productId: string;
   name: string;

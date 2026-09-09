@@ -17,8 +17,11 @@ import { Input } from "@/components/ui/input";
 import { useUiStore } from "@/lib/stores/ui-store";
 import { useKeranjangStore } from "@/lib/stores/keranjang-store";
 import { formatRupiah } from "@/lib/format";
-import { barisStruk, tautanWhatsApp, teksNotaWa } from "@/lib/nota";
+import { barisStruk } from "@/lib/nota";
 import { nomorWa } from "@/lib/format";
+import { bangunStrukEscpos } from "@/lib/hardware/escpos";
+import { cetakViaBluetooth, apakahBluetoothDidukung } from "@/lib/hardware/bluetooth-printer";
+import { formatNotaWhatsApp, buatTautanNotaWa } from "@/lib/hardware/nota-wa";
 import type { Customer, InfoToko } from "@/lib/types";
 
 export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Customer[] }) {
@@ -26,12 +29,14 @@ export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Cu
   const setStrukSale = useUiStore((s) => s.setStrukSale);
   const kosongkan = useKeranjangStore((s) => s.kosongkan);
   const [lebar, setLebar] = useState<"58" | "80">("58");
+  const [sedangMencetak, setSedangMencetak] = useState(false);
+
   const pelangganTerpilih = useMemo(
     () => pelanggan.find((c) => c.id === sale?.customerId),
     [pelanggan, sale]
   );
 
-  const baris = useMemo(() => (sale ? barisStruk(sale, toko) : []), [sale, toko]);
+  const baris = useMemo(() => (sale ? barisStruk(sale, toko, lebar === "58" ? 32 : 48) : []), [sale, toko, lebar]);
 
   if (!sale) return null;
 
@@ -45,23 +50,54 @@ export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Cu
   }
 
   function cetakBrowser() {
-    toast.info("Menyiapkan cetak struk via browser (cadangan ESC/POS).");
     window.print();
   }
 
-  function cetakBluetooth() {
-    toast.success(
-      "Mengirim perintah ESC/POS ke printer Bluetooth... (driver asli menyala di Tahap 3)"
-    );
+  async function cetakBluetooth() {
+    if (!sale) return;
+
+    if (!apakahBluetoothDidukung()) {
+      toast.error("Browser tidak mendukung Web Bluetooth. Silakan gunakan tombol Cetak Browser.");
+      return;
+    }
+
+    setSedangMencetak(true);
+    const toastId = toast.loading("Menghubungkan ke printer Bluetooth...");
+
+    try {
+      const lebarKarakter = lebar === "58" ? 32 : 48;
+      const bytes = bangunStrukEscpos(sale, toko, {
+        lebarKarakter,
+        bukaLaci: sale.paymentMethod === "cash",
+        potongKertas: true,
+      });
+
+      toast.loading("Mengirim perintah ESC/POS...", { id: toastId });
+      const hasil = await cetakViaBluetooth(bytes);
+
+      if (hasil.sukses) {
+        toast.success("Struk berhasil dicetak ke printer Bluetooth!", { id: toastId });
+      } else {
+        toast.error(hasil.pesan || "Gagal mencetak struk.", { id: toastId });
+      }
+    } catch (err: unknown) {
+      const pesan = err instanceof Error ? err.message : "Gagal terhubung ke printer Bluetooth.";
+      toast.error(pesan, { id: toastId });
+    } finally {
+      setSedangMencetak(false);
+    }
   }
 
   function kirimWa(noTelp?: string) {
+    if (!sale) return;
     const nomor = nomorWa(pelangganTerpilih?.phone ?? noTelp);
     if (!nomor) {
-      toast.error("Nomor HP pembeli belum diisi.");
+      toast.error("Nomor HP pelanggan belum diisi.");
       return;
     }
-    window.open(tautanWhatsApp(nomor, teksNotaWa(sale!, toko)), "_blank");
+    const teks = formatNotaWhatsApp(sale, toko);
+    const url = buatTautanNotaWa(nomor, teks);
+    window.open(url, "_blank");
   }
 
   return (
@@ -90,7 +126,7 @@ export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Cu
           </div>
         )}
 
-        <div className="mx-auto max-h-[45vh] overflow-y-auto rounded-lg border bg-white p-3">
+        <div className="mx-auto max-h-[45vh] overflow-y-auto rounded-lg border bg-white p-3 shadow-inner">
           <div
             id="struk-print"
             className={`mx-auto font-mono text-[11px] leading-5 text-black ${lebar === "58" ? "w-[58mm]" : "struk-80 w-[80mm]"}`}
@@ -116,7 +152,7 @@ export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Cu
         {!pelangganTerpilih && (
           <div className="space-y-1.5">
             <label htmlFor="wa-no" className="text-xs text-muted-foreground">
-              Nomor HP pembeli (untuk kirim nota)
+              Nomor HP pembeli (untuk kirim nota via WhatsApp)
             </label>
             <Input
               id="wa-no"
@@ -130,9 +166,14 @@ export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Cu
         )}
 
         <DialogFooter className="gap-2 sm:grid sm:grid-cols-2 sm:gap-2">
-          <Button variant="outline" size="lg" onClick={cetakBluetooth}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={cetakBluetooth}
+            disabled={sedangMencetak}
+          >
             <Printer className="size-4" />
-            Cetak Bluetooth
+            {sedangMencetak ? "Mencetak..." : "Cetak Bluetooth"}
           </Button>
           <Button variant="outline" size="lg" onClick={cetakBrowser}>
             <Printer className="size-4" />
@@ -144,7 +185,7 @@ export function DialogStruk({ toko, pelanggan }: { toko: InfoToko; pelanggan: Cu
             onClick={() => kirimWa((document.getElementById("wa-no") as HTMLInputElement | null)?.value)}
           >
             <MessageCircle className="size-4" />
-            Kirim Nota WhatsApp
+            Kirim WhatsApp
           </Button>
           <Button size="lg" onClick={selesai}>
             <X className="size-4" />

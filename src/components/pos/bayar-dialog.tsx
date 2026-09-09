@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { HandCoins, Landmark, QrCode, Timer, Banknote } from "lucide-react";
+import { HandCoins, Landmark, QrCode, Timer, Banknote, WifiOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,21 +39,42 @@ import {
 } from "@/lib/format";
 import { aksiBuatPenjualan } from "@/lib/server/aksi-pos";
 import { aksiTambahPelanggan } from "@/lib/server/aksi-katalog";
+import { simpanPenjualanOffline } from "@/lib/offline/sinkron";
 import { InputUang, angkaDariDigit } from "./shift-dialog";
-import type { Customer, PaymentMethod } from "@/lib/types";
+import type { Customer, PaymentMethod, Petugas } from "@/lib/types";
 
-export function DialogBayar({ pelanggan }: { pelanggan: Customer[] }) {
+export function DialogBayar({
+  pelanggan,
+  petugas,
+}: {
+  pelanggan: Customer[];
+  petugas?: Petugas;
+}) {
   const open = useUiStore((s) => s.bayarOpen);
   const setOpen = useUiStore((s) => s.setBayarOpen);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {open && <IsiBayar pelanggan={pelanggan} onTutup={() => setOpen(false)} />}
+      {open && (
+        <IsiBayar
+          pelanggan={pelanggan}
+          petugas={petugas}
+          onTutup={() => setOpen(false)}
+        />
+      )}
     </Dialog>
   );
 }
 
-function IsiBayar({ pelanggan, onTutup }: { pelanggan: Customer[]; onTutup: () => void }) {
+function IsiBayar({
+  pelanggan,
+  petugas,
+  onTutup,
+}: {
+  pelanggan: Customer[];
+  petugas?: Petugas;
+  onTutup: () => void;
+}) {
   const router = useRouter();
   const setStrukSale = useUiStore((s) => s.setStrukSale);
   const items = useKeranjangStore((s) => s.items);
@@ -76,6 +97,47 @@ function IsiBayar({ pelanggan, onTutup }: { pelanggan: Customer[]; onTutup: () =
   const diterima = angkaDariDigit(digit);
   const kembalian = hitungKembalian(diterima, total);
 
+  async function simpanOfflineFallback(cid: string | null) {
+    try {
+      const custObj = pelanggan.find((c) => c.id === cid);
+      const custName = custObj?.name || (namaBaru.trim() ? namaBaru.trim() : undefined);
+
+      const saleOffline = await simpanPenjualanOffline({
+        storeId: petugas?.storeId || "store-default",
+        cashierId: petugas?.id || "cashier-offline",
+        cashierName: petugas?.nama || "Kasir Toko",
+        customerId: cid || undefined,
+        customerName: custName,
+        items: items.map((i) => ({
+          productId: i.productId,
+          name: i.name,
+          unit: i.unit,
+          qty: i.qty,
+          price: i.price,
+          total: i.qty * i.price,
+        })),
+        subtotal,
+        discount: diskon,
+        total,
+        paymentMethod: metode,
+        amountPaid: metode === "cash" ? diterima : total,
+        changeAmount: kembalian,
+        transferRef: ref || undefined,
+      });
+
+      kosongkan();
+      onTutup();
+      setStrukSale(saleOffline);
+      toast.success(
+        "Tersimpan OFFLINE di perangkat. Otomatis disinkronkan saat terhubung kembali.",
+        { duration: 4000 }
+      );
+    } catch (err: unknown) {
+      const pesan = err instanceof Error ? err.message : "Gagal menyimpan transaksi offline.";
+      toast.error(pesan);
+    }
+  }
+
   async function selesai() {
     if (items.length === 0 || proses) return;
 
@@ -93,42 +155,79 @@ function IsiBayar({ pelanggan, onTutup }: { pelanggan: Customer[]; onTutup: () =
     }
 
     let cid: string | null = customerId || null;
+
+    // Jika perangkat terdeteksi offline secara eksplisit
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await simpanOfflineFallback(cid);
+      return;
+    }
+
     if (!cid && metode === "credit" && namaBaru.trim()) {
-      const baru = await aksiTambahPelanggan(namaBaru.trim(), teleponBaru.trim() || undefined);
-      if (!baru.ok || !baru.id) {
-        toast.error(baru.ok ? "Gagal menyimpan pelanggan." : baru.pesan);
+      try {
+        const baru = await aksiTambahPelanggan(namaBaru.trim(), teleponBaru.trim() || undefined);
+        if (!baru.ok || !baru.id) {
+          toast.error(baru.ok ? "Gagal menyimpan pelanggan." : baru.pesan);
+          return;
+        }
+        cid = baru.id;
+      } catch {
+        // Jika gagal karena jaringan, lanjutkan ke offline
+        await simpanOfflineFallback(cid);
         return;
       }
-      cid = baru.id;
     }
 
     setProses(true);
-    const hasil = await aksiBuatPenjualan({
-      items: items.map((i) => ({ productId: i.productId, unit: i.unit, qty: i.qty })),
-      diskonNilai,
-      diskonTipe,
-      metode,
-      uangDiterima: metode === "cash" ? diterima : total,
-      customerId: cid,
-      transferRef: ref || null,
-    });
-    setProses(false);
+    try {
+      const hasil = await aksiBuatPenjualan({
+        items: items.map((i) => ({ productId: i.productId, unit: i.unit, qty: i.qty })),
+        diskonNilai,
+        diskonTipe,
+        metode,
+        uangDiterima: metode === "cash" ? diterima : total,
+        customerId: cid,
+        transferRef: ref || null,
+      });
 
-    if (!hasil.ok) {
-      toast.error(hasil.pesan);
-      if (hasil.pesan.includes("Kasir belum dibuka")) onTutup();
-      return;
+      setProses(false);
+
+      if (!hasil.ok) {
+        if (hasil.pesan.includes("fetch") || hasil.pesan.includes("koneksi") || hasil.pesan.includes("Network")) {
+          // Jaringan bermasalah, fallback ke offline
+          toast.warning("Koneksi server terputus. Mengalihkan ke penyimpanan offline...");
+          await simpanOfflineFallback(cid);
+          return;
+        }
+
+        toast.error(hasil.pesan);
+        if (hasil.pesan.includes("Kasir belum dibuka")) onTutup();
+        return;
+      }
+
+      kosongkan();
+      onTutup();
+      setStrukSale(hasil.sale);
+      router.refresh();
+    } catch {
+      setProses(false);
+      // Fallback offline jika server action gagal karena masalah koneksi
+      toast.warning("Gagal menghubungi server. Menyimpan transaksi secara offline...");
+      await simpanOfflineFallback(cid);
     }
-    kosongkan();
-    onTutup();
-    setStrukSale(hasil.sale);
-    router.refresh();
   }
 
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>Bayar Belanja</DialogTitle>
+        <DialogTitle className="flex items-center gap-2">
+          <span>Bayar Belanja</span>
+          {typeof navigator !== "undefined" && !navigator.onLine && (
+            <span className="flex items-center gap-1 rounded bg-warning/20 px-2 py-0.5 text-xs text-warning">
+              <WifiOff className="size-3" />
+              Mode Offline
+            </span>
+          )}
+        </DialogTitle>
         <DialogDescription>Sentuh nominal uang yang diterima — kembalian langsung tampil.</DialogDescription>
       </DialogHeader>
 
@@ -270,5 +369,3 @@ function PanelQrisDuitku({ total, lunas, onSimulasi }: { total: number; lunas: b
     </>
   );
 }
-
-
