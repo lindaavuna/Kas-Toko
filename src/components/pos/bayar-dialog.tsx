@@ -44,9 +44,11 @@ import { InputUang, angkaDariDigit } from "./shift-dialog";
 import type { Customer, PaymentMethod, Petugas } from "@/lib/types";
 
 export function DialogBayar({
+  toko,
   pelanggan,
   petugas,
 }: {
+  toko?: { manual_qris_image?: string | null };
   pelanggan: Customer[];
   petugas?: Petugas;
 }) {
@@ -57,6 +59,7 @@ export function DialogBayar({
     <Dialog open={open} onOpenChange={setOpen}>
       {open && (
         <IsiBayar
+          toko={toko}
           pelanggan={pelanggan}
           petugas={petugas}
           onTutup={() => setOpen(false)}
@@ -67,10 +70,12 @@ export function DialogBayar({
 }
 
 function IsiBayar({
+  toko,
   pelanggan,
   petugas,
   onTutup,
 }: {
+  toko?: { manual_qris_image?: string | null };
   pelanggan: Customer[];
   petugas?: Petugas;
   onTutup: () => void;
@@ -281,8 +286,12 @@ function IsiBayar({
         </TabsContent>
 
         <TabsContent value="qris_manual" className="space-y-3 pt-2 text-center">
-          <div className="mx-auto w-fit rounded-lg border p-3">
-            <QrMock seed={`qris-statis-${total}`} />
+          <div className="mx-auto w-fit rounded-lg border p-3 bg-white">
+            {toko?.manual_qris_image ? (
+              <img src={toko.manual_qris_image} alt="QRIS Toko" className="max-w-[200px] rounded" />
+            ) : (
+              <QrMock seed={`qris-statis-${total}`} />
+            )}
           </div>
           <p className="text-sm text-muted-foreground">QRIS statis milik toko — tampilkan ke pembeli.</p>
           <div className="space-y-1.5 text-left">

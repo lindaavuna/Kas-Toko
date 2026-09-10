@@ -1,4 +1,5 @@
 import "server-only";
+
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { tanya } from "./db";
@@ -15,6 +16,7 @@ export interface Konteks {
   storeId: string;
   storeName: string;
   token: string;
+  isSuperadmin: boolean;
 }
 
 /**
@@ -36,13 +38,37 @@ export const ambilKonteks = cache(async (): Promise<Konteks | null> => {
   );
   if (sesi.length === 0) return null;
 
+  const user = await tanya<{ id: string; full_name: string; email: string; is_superadmin: boolean }>(
+    "select * from kas_get_user_by_id($1)",
+    [isi.uid]
+  );
+  if (user.length === 0) return null;
+  const usr = user[0];
+  const isSuperadmin = Boolean(usr.is_superadmin);
+
   const ctx = await tanya<{
     user_id: string; full_name: string; email: string;
     store_id: string; store_name: string; role: "owner" | "cashier";
     subscription_status: string;
   }>("select * from kas_user_context($1)", [isi.uid]);
-  if (ctx.length === 0) return null;
-  if (ctx[0].subscription_status === "expired") return null;
+
+  if (ctx.length === 0) {
+    if (isSuperadmin) {
+      return {
+        userId: usr.id,
+        nama: usr.full_name,
+        email: usr.email,
+        peran: "owner",
+        storeId: "",
+        storeName: "Platform KasToko",
+        token,
+        isSuperadmin: true,
+      };
+    }
+    return null;
+  }
+
+  if (!isSuperadmin && ctx[0].subscription_status === "expired") return null;
 
   return {
     userId: ctx[0].user_id,
@@ -52,6 +78,7 @@ export const ambilKonteks = cache(async (): Promise<Konteks | null> => {
     storeId: ctx[0].store_id,
     storeName: ctx[0].store_name,
     token,
+    isSuperadmin,
   };
 });
 

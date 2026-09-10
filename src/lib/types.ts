@@ -208,6 +208,7 @@ export interface Petugas {
   peran: Role;
   storeId: string;
   storeName: string;
+  isSuperadmin?: boolean;
 }
 
 /** Info toko utk struk & dialog */
@@ -216,4 +217,5 @@ export interface InfoToko {
   alamat: string;
   telepon: string;
   kakiStruk: string;
+  manual_qris_image?: string | null;
 }

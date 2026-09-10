@@ -587,7 +587,9 @@ export async function ambilIdentitasToko(ctx: Konteks) {
     ctx.userId,
     `select name, address, phone, receipt_footer, currency, subscription_status,
        to_char(subscription_expires_at, 'YYYY-MM-DD') as expires_at,
-       ai_enabled, custom_ai_api_key, custom_ai_base_url
+       ai_enabled, custom_ai_api_key, custom_ai_base_url,
+       pg_provider, pg_merchant_code, pg_api_key, pg_is_sandbox, pg_is_active,
+       manual_qris_image, manual_bank_name, manual_bank_account, manual_bank_holder
      from stores where id = $1`,
     [ctx.storeId]
   );
@@ -601,6 +603,38 @@ export async function ambilIdentitasToko(ctx: Konteks) {
     aiAktif: (r?.ai_enabled as boolean) ?? true,
     aiApiKey: (r?.custom_ai_api_key as string) ?? "",
     aiBaseUrl: (r?.custom_ai_base_url as string) ?? "",
+    paymentGateway: {
+      provider: (r?.pg_provider as string) ?? "duitku",
+      merchantCode: (r?.pg_merchant_code as string) ?? "",
+      apiKey: (r?.pg_api_key as string) ?? "",
+      isSandbox: (r?.pg_is_sandbox as boolean) ?? true,
+      isActive: (r?.pg_is_active as boolean) ?? false,
+      manual_qris_image: (r?.manual_qris_image as string) ?? null,
+      manual_bank_name: (r?.manual_bank_name as string) ?? "",
+      manual_bank_account: (r?.manual_bank_account as string) ?? "",
+      manual_bank_holder: (r?.manual_bank_holder as string) ?? "",
+    }
+  };
+}
+
+export async function ambilPlatformSewaConfig() {
+  const [r] = await tanya<any>(
+    "system",
+    `select monthly_subscription_fee, yearly_subscription_fee, trial_days, primary_gateway,
+            manual_qris_image, manual_bank_name, manual_bank_account, manual_bank_holder, manual_qris_is_active 
+     from platform_settings where id = 1`
+  );
+  return {
+    monthlyFee: r?.monthly_subscription_fee || 50000,
+    yearlyFee: r?.yearly_subscription_fee || 550000,
+    trialDays: r?.trial_days || 7,
+    primaryGateway: r?.primary_gateway || "paywuz",
+    manualQris: r?.manual_qris_is_active ? {
+      image: r.manual_qris_image,
+      bankName: r.manual_bank_name,
+      account: r.manual_bank_account,
+      holder: r.manual_bank_holder
+    } : null
   };
 }
 

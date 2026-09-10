@@ -21,13 +21,25 @@ export async function POST(req: Request) {
 
     const merchantOrderId = `KT-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
+    const { ambilIdentitasToko } = await import("@/lib/server/data");
+    const idToko = await ambilIdentitasToko(ctx);
+    const pg = idToko.paymentGateway;
+
+    // Utamakan kredensial DB jika diset, jika tidak fallback ke env
+    const overrideConfig = pg.provider === "duitku" && pg.apiKey ? {
+      merchantCode: pg.merchantCode || process.env.DUITKU_MERCHANT_CODE || "D12345Mock",
+      apiKey: pg.apiKey,
+      sandbox: pg.isSandbox,
+      callbackUrl: process.env.DUITKU_CALLBACK_URL || "https://kastoko.local/api/payment/duitku/callback"
+    } : undefined;
+
     const hasil = await buatTransaksiQris({
       merchantOrderId,
       amount,
       productDetails: body.productDetails || `Pembelian di ${ctx.storeName}`,
       customerEmail: body.customerEmail,
       customerPhone: body.customerPhone,
-    });
+    }, overrideConfig);
 
     if (!hasil.sukses) {
       return NextResponse.json({ error: hasil.pesan }, { status: 502 });

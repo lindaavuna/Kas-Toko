@@ -34,7 +34,13 @@ export default async function KasirLayout({ children }: { children: React.ReactN
         storeId: ctx.storeId,
         storeName: ctx.storeName,
       }}
-      toko={{ nama: toko.nama, alamat: toko.alamat, telepon: toko.telepon, kakiStruk: toko.kakiStruk }}
+      toko={{ 
+        nama: toko.nama, 
+        alamat: toko.alamat, 
+        telepon: toko.telepon, 
+        kakiStruk: toko.kakiStruk,
+        manual_qris_image: toko.paymentGateway.manual_qris_image,
+      }}
       pelanggan={pelanggan}
       produk={produk}
       shiftBuka={!!shift}

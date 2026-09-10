@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Bot, CreditCard, Plus, Save, Store, Tags, Trash2, UserCog } from "lucide-react";
+import { Bot, CreditCard, Plus, Save, Store, Tags, Trash2, UserCog, Eye, EyeOff } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import type { Category } from "@/lib/types";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import { aksiSimpanIdentitasToko, aksiSimpanPengaturanAI, aksiTambahKasirAkun, aksiToggleKasirAkun, aksiGantiPinKasir } from "@/lib/server/aksi-kas";
+import { aksiSimpanIdentitasToko, aksiSimpanPengaturanAI, aksiTambahKasirAkun, aksiToggleKasirAkun, aksiGantiPinKasir, aksiSimpanPaymentGateway } from "@/lib/server/aksi-kas";
 import { aksiTambahKategori } from "@/lib/server/aksi-katalog";
 
 const MODE = process.env.NEXT_PUBLIC_APP_MODE ?? "saas";
@@ -41,12 +41,24 @@ export function PanelPengaturan({
   identitas,
   sewa,
   aiConfig,
+  pgConfig,
 }: {
   categories: Category[];
   cashierAccounts: { id: string; nama: string; email: string; aktif: boolean }[];
   identitas: { nama: string; alamat: string; telepon: string; kakiStruk: string };
   sewa: { status: string; berakhir: string };
   aiConfig?: { aktif: boolean; apiKey?: string; baseUrl?: string };
+  pgConfig?: { 
+    provider: string; 
+    merchantCode: string; 
+    apiKey: string; 
+    isSandbox: boolean; 
+    isActive: boolean;
+    manual_qris_image: string | null;
+    manual_bank_name: string | null;
+    manual_bank_account: string | null;
+    manual_bank_holder: string | null;
+  };
 }) {
   const router = useRouter();
   const [toko, setToko] = useState(identitas);
@@ -58,6 +70,18 @@ export function PanelPengaturan({
     transfer: true,
     kasbon: true,
   });
+  const [pg, setPg] = useState({
+    provider: pgConfig?.provider || "duitku",
+    merchantCode: pgConfig?.merchantCode || "",
+    apiKey: pgConfig?.apiKey || "",
+    isSandbox: pgConfig?.isSandbox ?? true,
+    isActive: pgConfig?.isActive ?? false,
+    manual_qris_image: pgConfig?.manual_qris_image || null,
+    manual_bank_name: pgConfig?.manual_bank_name || "",
+    manual_bank_account: pgConfig?.manual_bank_account || "",
+    manual_bank_holder: pgConfig?.manual_bank_holder || "",
+  });
+  const [showPgKey, setShowPgKey] = useState(false);
   const [ai, setAi] = useState({
     aktif: aiConfig?.aktif ?? true,
     provider: aiConfig?.baseUrl?.includes("freellm")
@@ -70,6 +94,17 @@ export function PanelPengaturan({
     model: "nousresearch/hermes-3-llama-3.1-8b:free",
   });
   const [kasirBaru, setKasirBaru] = useState({ open: false, nama: "", email: "", pin: "" });
+
+  const handlePgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPg((s) => ({ ...s, manual_qris_image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   async function tambahKategoriKlik() {
     if (!kategoriBaru.trim()) return;
@@ -266,6 +301,178 @@ export function PanelPengaturan({
                   <p className="font-medium font-money">BCA 1234567890 a.n. {toko.nama}</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>💳 Integrasi Payment Gateway (QRIS & VA Otomatis)</CardTitle>
+              <CardDescription>
+                Konfigurasi provider untuk memproses pembayaran non-tunai secara dinamis.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Pilih Provider</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={pg.provider === "duitku" ? "default" : "outline"}
+                    onClick={() => setPg((s) => ({ ...s, provider: "duitku" }))}
+                  >
+                    Duitku
+                  </Button>
+                  <Button
+                    variant={pg.provider === "paywuz" ? "default" : "outline"}
+                    onClick={() => setPg((s) => ({ ...s, provider: "paywuz" }))}
+                  >
+                    Paywuz
+                  </Button>
+                </div>
+              </div>
+
+              {pg.provider === "duitku" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pg-merchant">Merchant Code</Label>
+                    <Input
+                      id="pg-merchant"
+                      placeholder="Contoh: D12345"
+                      value={pg.merchantCode}
+                      onChange={(e) => setPg({ ...pg, merchantCode: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pg-key-duitku">API Key / Private Key</Label>
+                    <div className="relative">
+                      <Input
+                        id="pg-key-duitku"
+                        type={showPgKey ? "text" : "password"}
+                        placeholder="Masukkan API Key Duitku"
+                        value={pg.apiKey}
+                        onChange={(e) => setPg({ ...pg, apiKey: e.target.value })}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPgKey(!showPgKey)}
+                      >
+                        {showPgKey ? <EyeOff className="size-4 text-muted-foreground" /> : <Eye className="size-4 text-muted-foreground" />}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {pg.provider === "paywuz" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="pg-key-paywuz">API Key Paywuz</Label>
+                  <div className="relative">
+                    <Input
+                      id="pg-key-paywuz"
+                      type={showPgKey ? "text" : "password"}
+                      placeholder="pk_live_... atau pk_sand_..."
+                      value={pg.apiKey}
+                      onChange={(e) => setPg({ ...pg, apiKey: e.target.value })}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPgKey(!showPgKey)}
+                    >
+                      {showPgKey ? <EyeOff className="size-4 text-muted-foreground" /> : <Eye className="size-4 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4 rounded-lg border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <Label>Mode Sandbox (Uji Coba)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Gunakan kredensial sandbox untuk simulasi pembayaran tanpa uang nyata.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={pg.isSandbox}
+                    onCheckedChange={(v) => setPg((s) => ({ ...s, isSandbox: v }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <Label>Aktifkan QRIS Dinamis Otomatis</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Tampilkan opsi QRIS otomatis di dialog bayar kasir.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={pg.isActive}
+                    onCheckedChange={(v) => setPg((s) => ({ ...s, isActive: v }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border p-4 mt-6">
+                <div className="flex items-center justify-between border-b pb-3 mb-2">
+                  <div>
+                    <h3 className="font-semibold text-lg">📷 QRIS Manual Toko & Info Rekening (0% Fee)</h3>
+                    <p className="text-sm text-muted-foreground">Tampilkan gambar stiker QRIS asli toko Anda agar pembeli bisa scan langsung (tanpa potongan gateway).</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label>Foto Stiker QRIS Toko</Label>
+                    <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                      {pg.manual_qris_image ? (
+                        <div className="relative inline-block">
+                          <img src={pg.manual_qris_image} alt="QRIS Manual Toko" className="max-h-48 rounded" />
+                          <Button size="sm" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0" onClick={() => setPg({ ...pg, manual_qris_image: null })}>X</Button>
+                        </div>
+                      ) : (
+                        <div className="py-6">
+                          <p className="text-sm text-muted-foreground mb-2">Pilih file gambar QRIS Toko (PNG/JPG)</p>
+                          <Input type="file" accept="image/*" onChange={handlePgFileChange} className="max-w-[250px] mx-auto" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label>Nama Bank / E-Wallet</Label>
+                      <Input placeholder="BCA / Mandiri / GoPay" value={pg.manual_bank_name || ""} onChange={(e) => setPg({ ...pg, manual_bank_name: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nomor Rekening</Label>
+                      <Input placeholder="1234567890" value={pg.manual_bank_account || ""} onChange={(e) => setPg({ ...pg, manual_bank_account: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Atas Nama</Label>
+                      <Input placeholder="Budi Santoso" value={pg.manual_bank_holder || ""} onChange={(e) => setPg({ ...pg, manual_bank_holder: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                size="lg"
+                onClick={async () => {
+                  const toastId = toast.loading("Menyimpan pengaturan Payment Gateway...");
+                  const hasil = await aksiSimpanPaymentGateway(pg);
+                  if (hasil.ok) {
+                    toast.success(hasil.pesan, { id: toastId });
+                    router.refresh();
+                  } else {
+                    toast.error(hasil.pesan, { id: toastId });
+                  }
+                }}
+              >
+                <Save className="mr-2 size-4" /> Simpan Pengaturan Payment Gateway
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

@@ -245,7 +245,7 @@ export function KerangkaKasir({
       <main className="flex-1">{children}</main>
 
       <DialogShift toko={toko} />
-      <DialogBayar pelanggan={pelanggan} petugas={petugas} />
+      <DialogBayar toko={toko} pelanggan={pelanggan} petugas={petugas} />
       <DialogStruk toko={toko} pelanggan={pelanggan} />
     </div>
   );

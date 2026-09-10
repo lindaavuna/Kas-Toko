@@ -18,6 +18,7 @@ export default async function HalamanPengaturan() {
       identitas={{ nama: toko.nama, alamat: toko.alamat, telepon: toko.telepon, kakiStruk: toko.kakiStruk }}
       sewa={{ status: toko.statusSewa, berakhir: toko.sewaBerakhir }}
       aiConfig={{ aktif: toko.aiAktif, apiKey: toko.aiApiKey, baseUrl: toko.aiBaseUrl }}
+      pgConfig={toko.paymentGateway}
     />
   );
 }

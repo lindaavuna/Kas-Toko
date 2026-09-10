@@ -20,6 +20,7 @@ import {
   Store,
   Truck,
   Handshake,
+  Crown,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { HermesChat, type SnapshotHermes } from "@/components/hermes-chat";
+import { WidgetSewa } from "./widget-sewa";
 import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { aksiTandaiNotifDibaca } from "@/lib/server/aksi-kas";
 import { formatRupiah } from "@/lib/format";
@@ -165,6 +167,7 @@ export function KerangkaDasbor({
   saldoKasHari,
   notifikasi,
   snapshot,
+  sewa,
   children,
 }: {
   petugas: Petugas;
@@ -172,6 +175,11 @@ export function KerangkaDasbor({
   saldoKasHari: number;
   notifikasi: AppNotification[];
   snapshot: SnapshotHermes;
+  sewa?: {
+    status: string;
+    berakhir: string;
+    platformConfig: any;
+  };
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -206,6 +214,7 @@ export function KerangkaDasbor({
             Layar Kasir (POS)
           </Link>
         </div>
+        <WidgetSewa sewa={sewa} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -216,13 +225,16 @@ export function KerangkaDasbor({
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 bg-sidebar p-0 pt-4 text-sidebar-foreground">
+            <SheetContent side="left" className="w-64 bg-sidebar p-0 pt-4 pb-4 flex flex-col h-full text-sidebar-foreground">
               <SheetHeader className="px-4">
                 <SheetTitle className="flex items-center gap-2 text-sidebar-foreground">
                   <Store className="size-5 text-primary" /> {petugas.storeName}
                 </SheetTitle>
               </SheetHeader>
-              <MenuDaftar onPilih={() => setDrawerOpen(false)} />
+              <div className="flex-1 overflow-y-auto">
+                <MenuDaftar onPilih={() => setDrawerOpen(false)} />
+              </div>
+              <WidgetSewa sewa={sewa} />
             </SheetContent>
           </Sheet>
 
@@ -251,6 +263,17 @@ export function KerangkaDasbor({
                   <p className="text-xs font-normal text-muted-foreground">Pemilik Toko</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {petugas.isSuperadmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/superadmin" className="text-primary font-medium">
+                        <Crown className="size-4 text-primary" />
+                        Super Admin Platform
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/kasir">
                     <Banknote className="size-4" />

@@ -31,7 +31,7 @@ export function FormLogin() {
       const hasil = await aksiMasukPemilik({ email, kataSandi: password });
       if (hasil.ok) {
         toast.success(hasil.pesan);
-        router.replace("/dashboard");
+        router.replace(hasil.redirectUrl || "/dashboard");
         router.refresh();
       } else {
         toast.error(hasil.pesan);

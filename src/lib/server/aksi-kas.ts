@@ -150,3 +150,46 @@ export async function aksiSimpanPengaturanAI(input: {
   });
   return r.ok ? { ok: true, pesan: "Pengaturan asisten AI disimpan." } : r;
 }
+
+export async function aksiSimpanPaymentGateway(input: {
+  provider: string;
+  merchantCode: string;
+  apiKey: string;
+  isSandbox: boolean;
+  isActive: boolean;
+  manual_qris_image: string | null;
+  manual_bank_name: string | null;
+  manual_bank_account: string | null;
+  manual_bank_holder: string | null;
+}): Promise<HasilAksi> {
+  const r = await jalankan(async () => {
+    const ctx = await butuhKonteks();
+    if (ctx.peran !== "owner") throw new GagalBisnis("Hanya pemilik yang bisa mengubah pengaturan pembayaran.");
+    
+    // Validasi Zod-like sederhana
+    if (!["duitku", "paywuz"].includes(input.provider)) throw new GagalBisnis("Provider tidak valid.");
+    
+    const { tanyaPakaiSesi } = await import("./db");
+    await tanyaPakaiSesi(
+      ctx.userId,
+      `update stores 
+       set pg_provider = $2, pg_merchant_code = $3, pg_api_key = $4, pg_is_sandbox = $5, pg_is_active = $6,
+           manual_qris_image = $7, manual_bank_name = $8, manual_bank_account = $9, manual_bank_holder = $10 
+       where id = $1`,
+      [
+        ctx.storeId,
+        input.provider,
+        input.merchantCode.trim() || null,
+        input.apiKey.trim() || null,
+        input.isSandbox,
+        input.isActive,
+        input.manual_qris_image,
+        input.manual_bank_name,
+        input.manual_bank_account,
+        input.manual_bank_holder
+      ]
+    );
+  });
+  return r.ok ? { ok: true, pesan: "Pengaturan Pembayaran tersimpan." } : r;
+}
+

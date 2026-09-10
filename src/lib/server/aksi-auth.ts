@@ -11,22 +11,40 @@ export type HasilAksi = { ok: boolean; pesan: string };
 
 const UMUR_SESI_MENIT = 60 * 24 * 14;
 
-async function mulaiSesi(userId: string): Promise<HasilAksi> {
+async function mulaiSesi(userId: string): Promise<HasilAksi & { redirectUrl?: string }> {
+  const usr = await tanya<{ id: string; full_name: string; is_superadmin: boolean }>(
+    "select * from kas_get_user_by_id($1)",
+    [userId]
+  );
+  if (usr.length === 0) return { ok: false, pesan: "Akun tidak ditemukan." };
+  
+  const isSuperadmin = Boolean(usr[0].is_superadmin);
+  const fullName = usr[0].full_name;
+
   const ctx = await tanya<{
     user_id: string; full_name: string; store_id: string;
     role: "owner" | "cashier"; subscription_status: string;
   }>("select * from kas_user_context($1)", [userId]);
-  if (ctx.length === 0) return { ok: false, pesan: "Akun belum terhubung ke toko mana pun." };
-  if (ctx[0].subscription_status === "expired") {
-    return { ok: false, pesan: "Masa sewa toko sudah berakhir. Perpanjang dulu ya." };
+
+  let role: "owner" | "cashier" = "owner";
+  let store = "";
+
+  if (ctx.length === 0) {
+    if (!isSuperadmin) return { ok: false, pesan: "Akun belum terhubung ke toko mana pun." };
+  } else {
+    if (!isSuperadmin && ctx[0].subscription_status === "expired") {
+      return { ok: false, pesan: "Masa sewa toko sudah berakhir. Perpanjang dulu ya." };
+    }
+    role = ctx[0].role;
+    store = ctx[0].store_id;
   }
 
   const token = await pasangCookieSesi({
-    uid: ctx[0].user_id,
+    uid: usr[0].id,
     sid: randomUUID(),
-    role: ctx[0].role,
-    store: ctx[0].store_id,
-    nama: ctx[0].full_name,
+    role,
+    store,
+    nama: fullName,
     exp: jatuhTempoSesi(),
   });
 
@@ -35,7 +53,8 @@ async function mulaiSesi(userId: string): Promise<HasilAksi> {
     hashToken(token),
     UMUR_SESI_MENIT,
   ]);
-  return { ok: true, pesan: "Berhasil masuk" };
+  
+  return { ok: true, pesan: "Berhasil masuk", redirectUrl: isSuperadmin ? "/superadmin" : "/dashboard" };
 }
 
 const skemaLogin = z.object({
@@ -43,7 +62,7 @@ const skemaLogin = z.object({
   kataSandi: z.string().min(1, "Isi password dulu."),
 });
 
-export async function aksiMasukPemilik(input: { email: string; kataSandi: string }): Promise<HasilAksi> {
+export async function aksiMasukPemilik(input: { email: string; kataSandi: string }): Promise<HasilAksi & { redirectUrl?: string }> {
   const data = skemaLogin.safeParse(input);
   if (!data.success) return { ok: false, pesan: data.error.issues[0].message };
 
