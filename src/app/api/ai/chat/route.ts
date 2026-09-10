@@ -6,7 +6,6 @@ import {
   ambilKasbon,
   ambilIdentitasToko,
 } from "@/lib/server/data";
-import { catatPengeluaran } from "@/lib/server/bisnis";
 import { formatRupiah } from "@/lib/format";
 
 export const HERMES_TOOLS = [
@@ -14,7 +13,7 @@ export const HERMES_TOOLS = [
     type: "function",
     function: {
       name: "get_daily_sales",
-      description: "Menghitung omset penjualan dan estimasi laba hari ini.",
+      description: "Menghitung omset penjualan dan estimasi laba hari ini secara read-only.",
       parameters: { type: "object", properties: {} },
     },
   },
@@ -22,7 +21,7 @@ export const HERMES_TOOLS = [
     type: "function",
     function: {
       name: "get_low_stock_products",
-      description: "Daftar barang yang stoknya menipis di bawah batas minimum.",
+      description: "Daftar barang yang stoknya menipis di bawah batas minimum (read-only).",
       parameters: { type: "object", properties: {} },
     },
   },
@@ -30,7 +29,7 @@ export const HERMES_TOOLS = [
     type: "function",
     function: {
       name: "get_debtor_list",
-      description: "Daftar pembeli yang memiliki kasbon belum lunas.",
+      description: "Daftar pembeli yang memiliki kasbon belum lunas (read-only khusus owner).",
       parameters: { type: "object", properties: {} },
     },
   },
@@ -38,7 +37,7 @@ export const HERMES_TOOLS = [
     type: "function",
     function: {
       name: "create_expense",
-      description: "Mencatat pengeluaran kasir langsung dari percakapan chat.",
+      description: "Menyiapkan draf pengeluaran kasir (AI Read-Only: wajib izin konfirmasi manusia).",
       parameters: {
         type: "object",
         properties: {
@@ -63,7 +62,7 @@ export async function POST(req: Request) {
     const pesanTerakhir = pesanList[pesanList.length - 1]?.content || "";
     const q = pesanTerakhir.toLowerCase();
 
-    // 1. Eksekutor Tool Internal Terintegrasi Database PostgreSQL
+    // 1. Eksekutor Tool Internal Read-Only Terintegrasi Database PostgreSQL
     async function eksekusiTool(namaTool: string, args: Record<string, unknown> = {}) {
       switch (namaTool) {
         case "get_daily_sales":
@@ -122,16 +121,16 @@ export async function POST(req: Request) {
           if (nominal <= 0) {
             return { error: "Nominal harus lebih dari 0", pesan: "Nominal pengeluaran tidak valid." };
           }
-          await catatPengeluaran(ctx!, {
-            title: judul,
-            amount: nominal,
-            note: "Dicatat melalui Asisten AI Hermes",
-          });
+          
+          // STRICT READ-ONLY GUARD: AI dilarang memutasi langsung ke database
           return {
-            sukses: true,
-            judul,
-            nominal,
-            pesan: `Siap! Pengeluaran "${judul}" ${formatRupiah(nominal)} sudah dicatat dan memotong kas laci shift berjalan. ✔`,
+            butuhKonfirmasiManual: true,
+            jenisAksi: "catat_pengeluaran",
+            draf: {
+              judul,
+              nominal,
+            },
+            pesan: `⚠️ Keamanan Chat AI (Strict Read-Only Aktif):\nAI tidak diizinkan memotong kas secara otomatis demi mencegah salah catat. Draf disiapkan:\n• Keperluan: "${judul}"\n• Nominal: ${formatRupiah(nominal)}\n\nSilakan konfirmasikan melalui tombol setujui di bawah.`,
           };
         }
         default:
@@ -156,17 +155,24 @@ export async function POST(req: Request) {
       // Fallback bila query identitas gagal
     }
 
+    // Default ke server AI mandiri 172.22.22.6 jika belum disetel di env
     const apiKey =
       customApiKey ||
       process.env.HERMES_API_KEY ||
       process.env.AI_PROVIDER_API_KEY ||
       process.env.OPENROUTER_API_KEY ||
-      process.env.OPENAI_API_KEY;
+      process.env.OPENAI_API_KEY ||
+      "freellmapi-05e7421e181b72e15c9ec7c61beb0eaaf60e5bcef425fd44";
+
     const baseUrl =
       customBaseUrl ||
       process.env.HERMES_API_BASE_URL ||
       process.env.AI_PROVIDER_BASE_URL ||
-      "https://openrouter.ai/api/v1";
+      "http://172.22.22.6:3001/v1";
+
+    const modelName =
+      process.env.HERMES_MODEL ||
+      "openai/gpt-oss-120b";
 
     if (apiKey) {
       try {
@@ -177,12 +183,12 @@ export async function POST(req: Request) {
             Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: process.env.HERMES_MODEL || "nousresearch/hermes-3-llama-3.1-8b",
+            model: modelName,
             messages: [
               {
                 role: "system",
                 content:
-                  "Anda adalah Hermes, asisten toko pintar untuk UMKM ritel di aplikasi KasToko. Gunakan bahasa Indonesia yang ramah, sopan, dan ringkas. Gunakan function calling yang tersedia untuk menjawab data toko aktual.",
+                  "Anda adalah Hermes, asisten toko pintar untuk UMKM ritel di aplikasi KasToko. Gunakan bahasa Indonesia yang ramah, sopan, dan ringkas. Anda beroperasi dalam mode STRICT READ-ONLY. Jangan pernah mencoba mengubah database langsung. Gunakan function calling yang tersedia untuk membaca data toko aktual.",
               },
               ...pesanList,
             ],
@@ -210,6 +216,7 @@ export async function POST(req: Request) {
               role: "assistant",
               content: toolResult.pesan || JSON.stringify(toolResult),
               functionCalled: `${funcName}()`,
+              drafAksi: toolResult.butuhKonfirmasiManual ? toolResult.draf : undefined,
             });
           }
 
@@ -225,7 +232,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Smart Engine Lokal (Zero-dependency Fallback)
+    // 3. Smart Engine Lokal (Zero-dependency Read-Only Fallback)
     if (/(omset|penjualan|pemasukan|laba|untung)/.test(q)) {
       const res = await eksekusiTool("get_daily_sales");
       return NextResponse.json({
@@ -264,7 +271,7 @@ export async function POST(req: Request) {
       if (!nominal) {
         return NextResponse.json({
           role: "assistant",
-          content: 'Boleh, sebutkan nominalnya. Contoh: "Tolong catat beli bensin Rp 20.000 dari kasir".',
+          content: 'Boleh, sebutkan nominalnya. Contoh: "Tolong siapkan draf beli bensin Rp 20.000".',
           functionCalled: "create_expense()",
         });
       }
@@ -281,6 +288,7 @@ export async function POST(req: Request) {
         role: "assistant",
         content: res.pesan,
         functionCalled: "create_expense()",
+        drafAksi: res.draf,
       });
     }
 
@@ -288,7 +296,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       role: "assistant",
       content:
-        'Contoh yang bisa ditanyakan:\n• "Omset hari ini berapa?"\n• "Barang apa yang stoknya mau habis?"\n• "Siapa saja yang punya kasbon?"\n• "Catat beli bensin Rp 20.000"',
+        'Halo! Saya Asisten AI Hermes (Mode Aman Read-Only). Contoh yang bisa ditanyakan:\n• "Omset hari ini berapa?"\n• "Barang apa yang stoknya mau habis?"\n• "Siapa saja yang punya kasbon?"\n• "Siapkan draf pengeluaran bensin Rp 20.000"',
     });
   } catch (err: unknown) {
     const pesan = err instanceof Error ? err.message : "Terjadi kesalahan internal AI.";
