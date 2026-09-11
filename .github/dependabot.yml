@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # Memantau dan memperbarui paket NPM (dependencies & devDependencies)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Jakarta"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+    open-pull-requests-limit: 5
+    ignore:
+      # Hindari pembaruan mayor otomatis jika belum siap (opsional)
+      # - dependency-name: "next"
+      #   update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies"
+      - "security"
+
+  # Memantau dan memperbarui versi GitHub Actions di dalam folder .github/workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Asia/Jakarta"
+    commit-message:
+      prefix: "chore(actions):"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "actions"
