@@ -32,32 +32,26 @@ export const ambilKonteks = cache(async (): Promise<Konteks | null> => {
   const isi = bacaToken(token);
   if (!isi) return null;
 
-  const sesi = await tanya<{ user_id: string }>(
-    "select user_id from kas_read_session($1)",
-    [hashToken(token)]
+  const dbData = await tanya<any>(
+    `WITH s AS (SELECT user_id FROM kas_read_session($1)),
+          u AS (SELECT * FROM kas_get_user_by_id($2) WHERE id IN (SELECT user_id FROM s)),
+          c AS (SELECT * FROM kas_user_context($2))
+     SELECT u.id as u_id, u.full_name, u.email, u.is_superadmin,
+            c.store_id, c.store_name, c.role, c.subscription_status
+     FROM u LEFT JOIN c ON u.id = c.user_id`,
+    [hashToken(token), isi.uid]
   );
-  if (sesi.length === 0) return null;
 
-  const user = await tanya<{ id: string; full_name: string; email: string; is_superadmin: boolean }>(
-    "select * from kas_get_user_by_id($1)",
-    [isi.uid]
-  );
-  if (user.length === 0) return null;
-  const usr = user[0];
-  const isSuperadmin = Boolean(usr.is_superadmin);
+  if (dbData.length === 0 || !dbData[0].u_id) return null;
+  const row = dbData[0];
+  const isSuperadmin = Boolean(row.is_superadmin);
 
-  const ctx = await tanya<{
-    user_id: string; full_name: string; email: string;
-    store_id: string; store_name: string; role: "owner" | "cashier";
-    subscription_status: string;
-  }>("select * from kas_user_context($1)", [isi.uid]);
-
-  if (ctx.length === 0) {
+  if (!row.store_id) {
     if (isSuperadmin) {
       return {
-        userId: usr.id,
-        nama: usr.full_name,
-        email: usr.email,
+        userId: row.u_id,
+        nama: row.full_name,
+        email: row.email,
         peran: "owner",
         storeId: "",
         storeName: "Platform KasToko",
@@ -68,15 +62,15 @@ export const ambilKonteks = cache(async (): Promise<Konteks | null> => {
     return null;
   }
 
-  if (!isSuperadmin && ctx[0].subscription_status === "expired") return null;
+  if (!isSuperadmin && row.subscription_status === "expired") return null;
 
   return {
-    userId: ctx[0].user_id,
-    nama: ctx[0].full_name,
-    email: ctx[0].email,
-    peran: ctx[0].role,
-    storeId: ctx[0].store_id,
-    storeName: ctx[0].store_name,
+    userId: row.u_id,
+    nama: row.full_name,
+    email: row.email,
+    peran: row.role,
+    storeId: row.store_id,
+    storeName: row.store_name,
     token,
     isSuperadmin,
   };

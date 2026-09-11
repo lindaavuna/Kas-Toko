@@ -178,6 +178,16 @@ export async function aksiPerpanjangSewaToko(storeId: string, durasiHari: number
 export async function aksiUbahStatusToko(storeId: string, status: string): Promise<{ ok: boolean; pesan: string }> {
   try {
     await wajibSuperAdmin();
+    
+    if (status === "lifetime") {
+      await tanya(
+        "UPDATE stores SET subscription_status = 'active', subscription_expires_at = '2099-12-31' WHERE id = $1",
+        [storeId]
+      );
+      revalidatePath("/superadmin");
+      return { ok: true, pesan: "Toko diset Aktif Selamanya (Lifetime / Gratis)." };
+    }
+
     const r = await tanya<{ kas_superadmin_set_store_status: boolean }>(
       "SELECT kas_superadmin_set_store_status($1, $2)",
       [storeId, status]

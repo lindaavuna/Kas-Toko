@@ -177,29 +177,7 @@ export function PanelPengaturan({
             </CardContent>
           </Card>
 
-          {MODE === "saas" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Status Sewa / Lisensi</CardTitle>
-                <CardDescription>Mode aplikasi: Sewa Bulanan (Cloud SaaS)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <Badge variant={sewa.status === "expired" ? "destructive" : "success"}>
-                      {sewa.status === "trial" ? "Masa Uji Coba Aktif" : sewa.status === "active" ? "Sewa Aktif" : "Sewa Kedaluwarsa"}
-                    </Badge>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {sewa.berakhir ? `Berakhir: ${sewa.berakhir}. ` : ""}Rp 50.000/bulan. Data tersimpan aman di cloud.
-                    </p>
-                  </div>
-                  <Button variant="outline" size="lg" onClick={() => toast.info("Pembayaran sewa dapat dikelola melalui dashboard SaaS.")}>
-                    Perpanjang Sewa
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
         </TabsContent>
 
         {/* AKUN KASIR */}

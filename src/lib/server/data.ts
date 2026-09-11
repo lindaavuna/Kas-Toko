@@ -649,3 +649,19 @@ export async function sisaKasbonPerPelanggan(ctx: Konteks): Promise<Record<strin
   );
   return Object.fromEntries(rows.map((r) => [r.customer_id, n(r.sisa)]));
 }
+
+export async function ambilProdukMenipis(ctx: Konteks) {
+  const rows = await tanya<{ name: string; stock_qty: number; min_stock: number }>(
+    ctx.userId,
+    `select name, stock_qty::float8, min_stock::float8
+     from products
+     where store_id = $1 and is_active = true and stock_qty <= min_stock
+     order by stock_qty asc limit 100`,
+    [ctx.storeId]
+  );
+  return rows.map(r => ({
+    nama: r.name,
+    sisa: Number(r.stock_qty),
+    batasMin: Number(r.min_stock)
+  }));
+}

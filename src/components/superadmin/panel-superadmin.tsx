@@ -16,6 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
@@ -264,6 +265,11 @@ export function PanelSuperadmin({ data }: { data: any }) {
                               <DropdownMenuItem onClick={() => handleStatus(s.id, 'active_365')}>
                                 Set Aktif 1 Tahun (Mulai Hari Ini)
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleStatus(s.id, 'lifetime')} className="text-emerald-600 font-bold">
+                                Gratis Selamanya (Khusus Owner Platform)
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleStatus(s.id, 'expired')} className="text-destructive font-medium">
                                 Kunci / Suspend Toko (Expired)
                               </DropdownMenuItem>

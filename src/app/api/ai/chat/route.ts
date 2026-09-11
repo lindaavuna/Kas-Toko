@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ambilKonteks } from "@/lib/server/sesi";
 import {
   statistikDasbor,
-  ambilProduk,
+  ambilProdukMenipis,
   ambilKasbon,
   ambilIdentitasToko,
 } from "@/lib/server/data";
@@ -76,16 +76,15 @@ export async function POST(req: Request) {
         }
         case "get_low_stock_products":
         case "ambil_produk_menipis": {
-          const products = await ambilProduk(ctx!);
-          const tipis = products.filter((p) => p.isActive && p.stockQty <= p.minStock);
+          const tipis = await ambilProdukMenipis(ctx!);
           return {
             total: tipis.length,
-            produk: tipis.map((p) => ({ nama: p.name, sisa: p.stockQty, batasMin: p.minStock })),
+            produk: tipis,
             pesan:
               tipis.length === 0
                 ? "Semua stok aman, belum ada yang menipis. Siap-siap kulakan sebelum akhir pekan ya!"
                 : `Barang yang perlu segera dibeli:\n` +
-                  tipis.map((p) => `• ${p.name} — sisa ${p.stockQty} (minimum ${p.minStock})`).join("\n"),
+                  tipis.map((p) => `• ${p.nama} — sisa ${p.sisa} (minimum ${p.batasMin})`).join("\n"),
           };
         }
         case "get_debtor_list":

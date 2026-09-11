@@ -17,7 +17,7 @@ export function pool() {
   if (!poolApp) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL kosong — salin dari .env.example ke .env.local");
-    poolApp = new Pool({ connectionString: url, max: 8, idleTimeoutMillis: 30_000 });
+    poolApp = new Pool({ connectionString: url, max: 200, idleTimeoutMillis: 30_000 });
   }
   return poolApp;
 }

@@ -3,7 +3,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, ChevronDown, Send, Sparkles, ShieldCheck, Check, AlertCircle } from "lucide-react";
+import { Bot, ChevronDown, Send, Sparkles, ShieldCheck, Check, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,15 @@ export function HermesChat({
       teks: `Halo ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda (Mode Read-Only Aman). Mau tanya omset, cek stok tipis, atau siapkan draf pengeluaran hari ini?`,
     },
   ]);
+
+  function bersihkanObrolan() {
+    setPesan([
+      {
+        dari: "hermes",
+        teks: `Halo ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda (Mode Read-Only Aman). Mau tanya omset, cek stok tipis, atau siapkan draf pengeluaran hari ini?`,
+      },
+    ]);
+  }
 
   const bawahRef = useRef<HTMLDivElement | null>(null);
 
@@ -235,7 +244,9 @@ export function HermesChat({
   ];
 
   const isiKonten = (
-    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+    <div
+      className="flex flex-col flex-1 min-h-0 overflow-hidden"
+    >
       <ScrollArea className="flex-1 min-h-0 pr-2">
         <div className="space-y-3 py-2">
           {pesan.map((m, i) => (
@@ -297,7 +308,7 @@ export function HermesChat({
         </div>
       </ScrollArea>
 
-      <div className="shrink-0 flex flex-wrap gap-1.5 border-t border-slate-200 dark:border-slate-800 pt-2">
+      <div className="shrink-0 flex flex-wrap gap-1.5 border-t border-slate-200 dark:border-slate-800 pt-2 mt-1">
         {saran.map((s) => (
           <button
             key={s}
@@ -338,6 +349,9 @@ export function HermesChat({
           <span>Asisten Toko Hermes</span>
         </DialogTitle>
         <div className="flex items-center gap-1.5">
+          <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950" onClick={bersihkanObrolan} title="Sesi Baru / Bersihkan Obrolan">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
           <Badge variant="outline" className="text-[10px] bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-300">
             <ShieldCheck className="w-3 h-3 mr-1 text-emerald-600" />
             Read-Only Aman
@@ -345,7 +359,7 @@ export function HermesChat({
         </div>
       </div>
       <DialogDescription className="text-xs text-slate-500">
-        Konsultasi omset, analisa stok, dan piutang toko (Didukung AI Dedicated 172.22.22.6).
+        Konsultasi omset, analisa stok, dan manajemen kasbon toko.
       </DialogDescription>
     </DialogHeader>
   );
@@ -354,10 +368,13 @@ export function HermesChat({
     return (
       <>
         <Button size="sm" variant="ghost" className="h-9 px-2 text-emerald-600" onClick={() => setBuka(true)} aria-label="Buka asisten AI Hermes">
-          <Bot className="size-4" />
+          <Sparkles className="size-4" />
         </Button>
         <Dialog open={buka} onOpenChange={setBuka}>
-          <DialogContent className="sm:max-w-md h-[min(600px,85vh)] flex flex-col p-4 gap-3 overflow-hidden">
+          <DialogContent
+            className="sm:max-w-md flex flex-col p-4 sm:p-5 gap-3 overflow-hidden shadow-2xl rounded-2xl h-[520px] max-h-[80vh]"
+            style={{ height: "520px", maxHeight: "80vh" }}
+          >
             {headerDialog}
             {isiKonten}
           </DialogContent>
@@ -369,18 +386,29 @@ export function HermesChat({
   return (
     <>
       <Dialog open={buka} onOpenChange={setBuka}>
-        <DialogContent className="fixed bottom-20 right-4 left-auto top-auto translate-x-0 translate-y-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[calc(100vw-2rem)] sm:max-w-[400px] h-[min(560px,calc(100dvh-6rem))] flex flex-col p-4 gap-3 overflow-hidden shadow-2xl rounded-2xl">
+        <DialogContent
+          className="fixed bottom-20 right-4 left-auto top-auto translate-x-0 translate-y-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[calc(100vw-2rem)] sm:max-w-[400px] flex flex-col p-4 sm:p-5 gap-3 overflow-hidden shadow-2xl rounded-2xl h-[520px] max-h-[80vh]"
+          style={{ height: "520px", maxHeight: "80vh" }}
+        >
           {headerDialog}
           {isiKonten}
         </DialogContent>
       </Dialog>
-      <Button
-        onClick={() => setBuka((v) => !v)}
-        className="fixed bottom-4 right-4 z-50 size-14 rounded-full shadow-xl bg-emerald-600 hover:bg-emerald-700 text-white"
-        aria-label="Buka chat Asisten AI Hermes"
-      >
-        {buka ? <ChevronDown className="size-6" /> : <Bot className="size-6" />}
-      </Button>
+      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3">
+        {!buka && (
+          <div className="animate-bounce bg-emerald-600 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-lg border border-emerald-500 pointer-events-none whitespace-nowrap relative">
+            Tanya AI! ✨
+            <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 border-y-[6px] border-y-transparent border-l-[6px] border-l-emerald-600"></div>
+          </div>
+        )}
+        <Button
+          onClick={() => setBuka((v) => !v)}
+          className="h-12 w-12 rounded-full shadow-2xl bg-emerald-600 hover:bg-emerald-700 text-white hover:scale-105 transition-transform shrink-0"
+          aria-label="Buka chat Asisten AI Hermes"
+        >
+          {buka ? <ChevronDown className="size-5" /> : <Sparkles className="size-5" />}
+        </Button>
+      </div>
     </>
   );
 }

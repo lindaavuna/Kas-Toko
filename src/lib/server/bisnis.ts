@@ -53,7 +53,7 @@ export async function buatPenjualan(ctx: KonteksMinimal, input: InputPenjualan):
       const p = await cl.query(
         `select id, name, unit, selling_price::float8 as price, stock_qty::float8 as stok,
            min_stock::float8 as min
-         from products where id = $1 and store_id = $2 and is_active`,
+         from products where id = $1 and store_id = $2 and is_active for update`,
         [i.productId, ctx.storeId]
       );
       if (p.rows.length === 0) gagal(`Barang tidak ditemukan atau tidak aktif.`);
@@ -138,22 +138,39 @@ export async function buatPenjualan(ctx: KonteksMinimal, input: InputPenjualan):
     const saleId = insertedSale.rows[0].id as string;
     const createdAt = new Date(insertedSale.rows[0].created_at as string).toISOString();
 
-    for (const i of rincian) {
+    if (rincian.length > 0) {
+      // 1. Bulk insert ke sale_items
       await cl.query(
         `insert into sale_items (sale_id, product_id, product_unit_id, quantity, unit_price, total)
-         values ($1,$2,$3,$4,$5,$6)`,
-        [saleId, i.productId, i.unitId, i.qty, i.price, i.total]
+         select $1, * from unnest($2::uuid[], $3::uuid[], $4::numeric[], $5::numeric[], $6::numeric[])`,
+        [
+          saleId,
+          rincian.map(i => i.productId),
+          rincian.map(i => i.unitId),
+          rincian.map(i => i.qty),
+          rincian.map(i => i.price),
+          rincian.map(i => i.total)
+        ]
       );
-      await cl.query("select kas_ubah_stok($1, $2)", [i.productId, -i.baseQty]);
+      // 2. Bulk pemotongan stok
+      await cl.query(
+        `select kas_ubah_stok(p, d) from unnest($1::uuid[], $2::numeric[]) as t(p, d)`,
+        [rincian.map(i => i.productId), rincian.map(i => -i.baseQty)]
+      );
+      // 3. Bulk insert mutasi stok
       await cl.query(
         `insert into stock_mutations (store_id, product_id, mutation_type, reason, quantity, sale_id, created_by)
-         values ($1,$2,'out','sale',$3,$4,$5)`,
-        [ctx.storeId, i.productId, i.baseQty, saleId, ctx.userId]
+         select $1, p, 'out', 'sale', q, $2, $3 from unnest($4::uuid[], $5::numeric[]) as t(p, q)`,
+        [ctx.storeId, saleId, ctx.userId, rincian.map(i => i.productId), rincian.map(i => i.baseQty)]
       );
-      if (i.stokSebelum > i.minStock && i.stokSebelum - i.baseQty <= i.minStock) {
+      // 4. Batch notifikasi peringatan stok tipis
+      const notifs = rincian
+        .filter(i => i.stokSebelum > i.minStock && i.stokSebelum - i.baseQty <= i.minStock)
+        .map(i => `${i.name} sisa ${i.stokSebelum - i.baseQty} (batas minimum ${i.minStock}). Segera kulakan!`);
+      if (notifs.length > 0) {
         await cl.query(
-          "select kas_notif_toko($1,'stock_low','Stok Menipis',$2)",
-          [ctx.storeId, `${i.name} sisa ${i.stokSebelum - i.baseQty} (batas minimum ${i.minStock}). Segera kulakan!`]
+          `select kas_notif_toko($1, 'stock_low', 'Stok Menipis', msg) from unnest($2::text[]) as t(msg)`,
+          [ctx.storeId, notifs]
         );
       }
     }
@@ -650,20 +667,30 @@ export async function catatPembelian(
        values ($1,$2,$3,$4,$5,$5, case when $4='paid' then now() end, $6) returning id`,
       [ctx.storeId, input.supplierId, invoice, input.status, total, ctx.userId]
     );
-    for (const i of rincian) {
+    if (rincian.length > 0) {
+      const purId = pur.rows[0].id;
+      // 1. Bulk insert purchase_items
       await cl.query(
-        `insert into purchase_items (purchase_id, product_id, quantity, unit_cost, total) values ($1,$2,$3,$4,$5)`,
-        [pur.rows[0].id, i.id, i.qty, i.cost, i.total]
+        `insert into purchase_items (purchase_id, product_id, quantity, unit_cost, total)
+         select $1, * from unnest($2::uuid[], $3::numeric[], $4::numeric[], $5::numeric[])`,
+        [purId, rincian.map(i => i.id), rincian.map(i => i.qty), rincian.map(i => i.cost), rincian.map(i => i.total)]
       );
-      // harga beli terakhir ikut diperbarui — jadi patokan HPP produk
-      await cl.query("update products set purchase_price=$2 where id=$1 and store_id=$3", [
-        i.id, i.cost, ctx.storeId,
-      ]);
-      await cl.query("select kas_ubah_stok($1,$2)", [i.id, i.qty]);
+      // 2. Update harga beli HPP secara masal
+      await cl.query(
+        `update products p set purchase_price = t.c from unnest($1::uuid[], $2::numeric[]) as t(id, c)
+         where p.id = t.id and p.store_id = $3`,
+        [rincian.map(i => i.id), rincian.map(i => i.cost), ctx.storeId]
+      );
+      // 3. Bulk penambahan stok
+      await cl.query(
+        `select kas_ubah_stok(p, d) from unnest($1::uuid[], $2::numeric[]) as t(p, d)`,
+        [rincian.map(i => i.id), rincian.map(i => i.qty)]
+      );
+      // 4. Bulk insert mutasi stok
       await cl.query(
         `insert into stock_mutations (store_id, product_id, mutation_type, reason, quantity, purchase_id, note, created_by)
-         values ($1,$2,'in','purchase',$3,$4,$5,$6)`,
-        [ctx.storeId, i.id, i.qty, pur.rows[0].id, `Beli dari ${sup.rows[0].name}`, ctx.userId]
+         select $1, p, 'in', 'purchase', q, $2, $3, $4 from unnest($5::uuid[], $6::numeric[]) as t(p, q)`,
+        [ctx.storeId, purId, `Beli dari ${sup.rows[0].name}`, ctx.userId, rincian.map(i => i.id), rincian.map(i => i.qty)]
       );
     }
     if (input.status === "credit") {
