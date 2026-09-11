@@ -13,7 +13,7 @@ import {
 import { Crown, Zap, ShieldCheck } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 
-export function WidgetSewa({ sewa }: { sewa: unknown }) {
+export function WidgetSewa({ sewa }: { sewa: any }) {
   const [open, setOpen] = useState(false);
   if (!sewa || !sewa.platformConfig) return null;
 

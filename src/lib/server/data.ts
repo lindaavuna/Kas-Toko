@@ -18,8 +18,8 @@ import type {
 } from "@/lib/types";
 
 type Row = Record<string, unknown>;
-const n = (v: unknown) => Number(v ?? 0);
-const t = (v: unknown) => (v ? new Date(v as string).toISOString() : undefined) as string;
+const n = (v: any) => Number(v ?? 0);
+const t = (v: any) => (v ? new Date(v as string).toISOString() : undefined) as string;
 
 function petakanProduk(r: Row, units: ProductUnit[]): Product {
   return {
@@ -141,7 +141,7 @@ export async function ambilPenjualan(
   opts: { hanyaKasirSaya?: boolean; sejak?: string; limit?: number; id?: string } = {}
 ): Promise<Sale[]> {
   const syarat: string[] = ["s.store_id = $1"];
-  const params: unknown[] = [ctx.storeId];
+  const params: any[] = [ctx.storeId];
   if (opts.hanyaKasirSaya) {
     params.push(ctx.userId);
     syarat.push(`s.cashier_id = $${params.length}`);

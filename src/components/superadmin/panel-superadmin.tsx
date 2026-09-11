@@ -24,7 +24,7 @@ import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut, Activity } from "lucide-react";
 
-export function PanelSuperadmin({ data }: { data: unknown }) {
+export function PanelSuperadmin({ data }: { data: any }) {
   const router = useRouter();
   const { metrics, stores, settings } = data;
 
@@ -211,7 +211,7 @@ export function PanelSuperadmin({ data }: { data: unknown }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {stores.map((s: unknown) => (
+                    {stores.map((s: any) => (
                       <tr key={s.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="px-4 py-3">
                           {s.is_online ? (

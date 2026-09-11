@@ -129,7 +129,7 @@ function IsiBuka({ onTutup }: { onTutup: () => void }) {
 
 type DataLaci = Awaited<ReturnType<typeof aksiRangkumanLaci>>;
 
-function IsiTutup({ toko }: { onTutup: () => void; toko: InfoToko }) {
+function IsiTutup({ onTutup, toko }: { onTutup: () => void; toko: InfoToko }) {
   const router = useRouter();
   const [uangFisik, setUangFisik] = useState("");
   const [data, setData] = useState<DataLaci | null>(null);
