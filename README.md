@@ -12,6 +12,10 @@ KasToko adalah sistem Point of Sale (POS) dan manajemen operasional toko ritel m
 
 ## 🌟 Fitur Utama
 
+- 🎨 **Desain Modern (v0.2+)**: UI _Landing Page_ menggunakan tata letak Bento Grid yang responsif dengan efek _Glassmorphism_ yang elegan dan ramah pengguna (Android & Apple iOS).
+- 📱 **PWA Native (Anti-Dinosaurus)**: Menggunakan _Native Service Worker_ khusus untuk meng-cache aset. Kasir tetap bisa berjualan dan memuat aplikasi tanpa internet sama sekali (benar-benar 100% offline-first).
+- 💬 **WhatsApp CS Widget**: Terintegrasi langsung dengan tombol melayang WhatsApp untuk pelayanan pelanggan instan.
+
 - ⚡ **Kasir Kilat (Quick POS)**: Desain sentuh intuitif, responsif layar HP 360px–412px hingga tablet dan layar desktop kasir.
 - 🖨️ **Hardware Kasir Ritel**:
   - Direct Web Bluetooth ESC/POS printing (58mm & 80mm).
@@ -43,7 +47,7 @@ KasToko adalah sistem Point of Sale (POS) dan manajemen operasional toko ritel m
 - **UI Library**: React 19, [Tailwind CSS v4](https://tailwindcss.com/), Radix UI, Lucide Icons, Sonner
 - **Database**: PostgreSQL 16 dengan pgcrypto & Row Level Security
 - **Penyimpanan Lokal**: Dexie.js (IndexedDB)
-- **Testing**: Vitest (64 Unit/Integration Tests) + Playwright (12 E2E Tests)
+- **Testing & Keamanan**: Vitest, Playwright, CodeQL Security Scanner, dan Dependabot
 - **Deployment**: Docker Multi-Stage (`node:22-alpine`), PM2, Nginx Proxy Manager
 
 ---
