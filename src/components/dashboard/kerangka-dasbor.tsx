@@ -38,6 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { HermesChat, type SnapshotHermes } from "@/components/hermes-chat";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { WidgetSewa } from "./widget-sewa";
 import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { aksiTandaiNotifDibaca } from "@/lib/server/aksi-kas";
@@ -246,6 +247,7 @@ export function KerangkaDasbor({
               Kas hari ini {formatRupiah(saldoKasHari)}
             </Badge>
             <Lonceng notifikasi={notifikasi} />
+            <ThemeToggle className="size-9 rounded-lg" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">

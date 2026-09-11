@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Store, Sparkles, CheckCircle2 } from "lucide-react";
+import { Store, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +56,7 @@ export function FormRegister() {
   }
 
   return (
-    <Card className="border-slate-200 dark:border-slate-800 shadow-xl">
+    <Card className="border-slate-200 dark:border-slate-800 shadow-xl bg-card">
       <CardHeader className="space-y-3">
         {/* Plan Selector Header Banner */}
         {MODE === "saas" && (
@@ -70,7 +70,7 @@ export function FormRegister() {
                   className={`text-[11px] font-bold px-2.5 py-1 rounded-md transition-all ${
                     selectedPlan === "trial"
                       ? "bg-emerald-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   Trial 7 Hari
@@ -81,7 +81,7 @@ export function FormRegister() {
                   className={`text-[11px] font-bold px-2.5 py-1 rounded-md transition-all ${
                     selectedPlan === "monthly"
                       ? "bg-emerald-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   Bulanan
@@ -92,7 +92,7 @@ export function FormRegister() {
                   className={`text-[11px] font-bold px-2.5 py-1 rounded-md transition-all ${
                     selectedPlan === "yearly"
                       ? "bg-emerald-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   1 Tahun 🔥
@@ -103,10 +103,10 @@ export function FormRegister() {
             {/* Selected Plan Info Card */}
             <div className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${
               selectedPlan === "yearly"
-                ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-900 dark:text-emerald-300"
+                ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-500/40 text-emerald-950 dark:text-emerald-300"
                 : selectedPlan === "monthly"
-                ? "bg-teal-950/20 border-teal-500/40 text-teal-900 dark:text-teal-300"
-                : "bg-slate-100/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
+                ? "bg-teal-50 dark:bg-teal-950/30 border-teal-300 dark:border-teal-500/40 text-teal-950 dark:text-teal-300"
+                : "bg-slate-100/90 dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
             }`}>
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400">
                 <Sparkles className="w-4 h-4" />
@@ -195,7 +195,12 @@ export function FormRegister() {
             <Input id="telp" inputMode="tel" placeholder="0851-2345-6789" value={form.telepon} onChange={ubah("telepon")} required />
           </div>
 
-          <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 text-sm shadow-md shadow-emerald-600/20 rounded-xl" size="lg" disabled={proses}>
+          <Button
+            type="submit"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-slate-950 font-bold h-11 text-sm shadow-md rounded-xl transition-all"
+            size="lg"
+            disabled={proses}
+          >
             <Store className="w-4 h-4 mr-1.5" />
             <span>{proses ? "Membuat Toko..." : "Daftarkan Toko & Mulai Jualan Sekarang"}</span>
           </Button>
@@ -203,7 +208,7 @@ export function FormRegister() {
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Sudah memiliki akun toko?{" "}
-          <Link href="/login" className="font-semibold text-emerald-600 hover:underline">
+          <Link href="/login" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
             Masuk di sini
           </Link>
         </p>

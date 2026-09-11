@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { aksiSimpanPengaturanPlatform, aksiPerpanjangSewaToko, aksiUbahStatusToko, aksiSimpanPaketLangganan } from "@/lib/server/aksi-superadmin";
 import { aksiKeluar } from "@/lib/server/aksi-auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut, Activity } from "lucide-react";
 
 export function PanelSuperadmin({ data }: { data: any }) {
@@ -114,8 +115,9 @@ export function PanelSuperadmin({ data }: { data: any }) {
           <h1 className="text-3xl font-bold tracking-tight">👑 KasToko Super Admin</h1>
           <p className="text-muted-foreground">Pusat Kendali Platform & Sewa SaaS</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Badge variant="outline" className="px-3 py-1 font-normal">admin@billinghmb.site</Badge>
+          <ThemeToggle className="size-9 rounded-lg" />
           <Button onClick={() => aksiKeluar()} variant="destructive" size="sm">
             <LogOut className="mr-2 size-4" /> Keluar Platform
           </Button>

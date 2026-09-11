@@ -37,9 +37,9 @@ export function LandingFAQ() {
   ];
 
   return (
-    <section id="faq" className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+    <section id="faq" className="py-8 sm:py-12 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="text-center max-w-2xl mx-auto mb-10 space-y-3">
           <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
             Tanya jawab populer
           </span>

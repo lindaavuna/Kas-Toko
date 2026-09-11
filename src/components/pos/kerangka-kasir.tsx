@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { HermesChat, type SnapshotHermes } from "@/components/hermes-chat";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DialogShift, DialogPengeluaran } from "@/components/pos/shift-dialog";
 import { DialogBayar } from "@/components/pos/bayar-dialog";
 import { DialogStruk } from "@/components/pos/struk-dialog";
@@ -202,6 +203,7 @@ export function KerangkaKasir({
               </Link>
             </Button>
           )}
+          <ThemeToggle className="size-9 rounded-lg" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">

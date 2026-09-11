@@ -8,6 +8,7 @@ import { LandingFeatures } from "@/components/landing/features-section";
 import { LandingPricing } from "@/components/landing/pricing-section";
 import { LandingFAQ } from "@/components/landing/faq-section";
 import { LandingFooter } from "@/components/landing/footer";
+import { WhatsAppWidget } from "@/components/landing/whatsapp-widget";
 
 export const metadata: Metadata = {
   title: "KasToko — Aplikasi POS Kasir Ritel & Warung Modern (100% Offline-First)",
@@ -40,6 +41,7 @@ export default async function HalamanAwal() {
       <LandingPricing />
       <LandingFAQ />
       <LandingFooter />
+      <WhatsAppWidget />
     </main>
   );
 }

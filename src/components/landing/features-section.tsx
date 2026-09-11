@@ -45,12 +45,15 @@ export function LandingFeatures() {
   ];
 
   return (
-    <section id="fitur" className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900">
-      <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+    <section id="fitur" className="py-8 sm:py-12 bg-slate-50 dark:bg-slate-900/40 relative overflow-hidden">
+      {/* Dekorasi latar belakang (Glassmorphism highlight) */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/5 dark:bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+
+      <div className="w-full max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <Reveal className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <Badge
             variant="outline"
-            className="text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 font-medium"
+            className="text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900 bg-emerald-50/80 dark:bg-emerald-950/40 backdrop-blur-sm font-medium"
           >
             Fitur lengkap ritel & grosir
           </Badge>
@@ -62,27 +65,30 @@ export function LandingFeatures() {
           </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6">
           {fitur.map((f, idx) => {
             const Icon = f.icon;
             return (
               <Reveal
                 key={f.judul}
                 delay={idx * 80}
-                className="rounded-2xl p-6 sm:p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 space-y-5"
+                className="group rounded-2xl p-6 sm:p-8 bg-white/80 dark:bg-slate-950/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 hover:border-emerald-300/50 dark:hover:border-emerald-800/50 hover:-translate-y-1 flex flex-col h-full"
               >
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${f.warna}`}>
-                  <Icon className="w-5 h-5" />
+                <div className="flex items-start gap-4 mb-5">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${f.warna}`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white leading-tight">
+                      {f.judul}
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">
-                    {f.judul}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                    {f.desc}
-                  </p>
-                </div>
-                <ul className="space-y-2.5 text-sm text-slate-700 dark:text-slate-300">
+                <p className="text-[13px] sm:text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed flex-1">
+                  {f.desc}
+                </p>
+                <ul className="space-y-3 text-[13px] sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-900/50 p-4 rounded-xl">
                   {f.poin.map((p) => (
                     <li key={p} className="flex items-start gap-2.5">
                       <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${f.warnaCentang}`} />
@@ -98,51 +104,56 @@ export function LandingFeatures() {
           <Reveal
             delay={240}
             id="ai-assistant"
-            className="rounded-2xl p-6 sm:p-8 bg-slate-950 border border-slate-800 space-y-5 h-full"
+            className="group rounded-2xl p-6 sm:p-8 bg-slate-900/90 dark:bg-slate-950/90 backdrop-blur-md border border-slate-800 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-900/20 hover:border-emerald-500/30 hover:-translate-y-1 flex flex-col h-full relative overflow-hidden"
           >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-                <Sparkles className="w-5 h-5" />
+            {/* Aksen kilau AI */}
+            <div className="absolute top-0 right-0 p-32 bg-emerald-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+
+            <div className="flex items-start justify-between gap-4 mb-5 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-white leading-tight">
+                  Asisten AI Analis Bisnis
+                </h3>
               </div>
               <Badge
                 variant="outline"
-                className="text-emerald-300 border-emerald-800 bg-emerald-950/50 font-medium"
+                className="text-emerald-300 border-emerald-800/60 bg-emerald-950/50 font-medium whitespace-nowrap"
               >
                 100% Read-Only
               </Badge>
             </div>
 
-            <div>
-              <h3 className="text-lg sm:text-xl font-semibold text-white">
-                Asisten AI Analis Bisnis
-              </h3>
-              <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-                Konsultasikan kinerja toko Anda lewat obrolan teks bahasa Indonesia. AI menganalisis omset, produk terlaris, dan kasbon secara real-time.
-              </p>
-            </div>
+            <p className="text-[13px] sm:text-sm text-slate-400 mb-6 leading-relaxed flex-1 relative z-10">
+              Konsultasikan kinerja toko Anda lewat obrolan teks bahasa Indonesia. AI menganalisis omset, produk terlaris, dan kasbon secara real-time layaknya asisten pribadi.
+            </p>
 
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                <ShieldAlert className="w-4 h-4" />
-                <span>Standar keamanan anti-manipulasi data</span>
+            <div className="space-y-4 relative z-10">
+              <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400 font-medium text-xs sm:text-sm">
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>Standar keamanan anti-manipulasi data</span>
+                </div>
+                <p className="text-slate-400 leading-relaxed text-[11px] sm:text-xs">
+                  AI dikunci hanya boleh membaca data (<span className="font-mono text-emerald-300 bg-emerald-950/50 px-1 py-0.5 rounded">SELECT only</span>). AI tidak bisa memotong kasir atau menghapus transaksi dagangan Anda.
+                </p>
               </div>
-              <p className="text-slate-400 leading-relaxed text-[11px]">
-                AI dikunci hanya boleh membaca data (<span className="font-mono text-emerald-300">SELECT only</span>). AI tidak bisa memotong kasir atau menghapus transaksi dagangan Anda.
-              </p>
-            </div>
 
-            <ul className="space-y-2.5 text-sm text-slate-300">
-              {[
-                "Tanya: \u201cBerapa omset dan laba bersih hari ini?\u201d",
-                "Tanya: \u201cProduk apa saja yang harus saya kulakan besok?\u201d",
-                "Didukung model canggih FreeLLM lokal & Groq",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
+              <ul className="space-y-3 text-[13px] sm:text-sm text-slate-300 bg-slate-800/30 p-4 rounded-xl">
+                {[
+                  "Tanya: \u201cBerapa omset dan laba bersih hari ini?\u201d",
+                  "Tanya: \u201cProduk apa saja yang harus saya kulakan besok?\u201d",
+                  "Didukung model canggih (Llama 3 & Groq)",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </Reveal>
         </div>
       </div>

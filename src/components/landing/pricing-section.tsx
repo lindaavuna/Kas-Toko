@@ -69,9 +69,9 @@ export function LandingPricing() {
   ];
 
   return (
-    <section id="harga" className="py-16 sm:py-24 bg-white dark:bg-slate-900">
-      <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+    <section id="harga" className="py-8 sm:py-12 bg-white dark:bg-slate-900">
+      <div className="w-full max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
             Tarif transparan & terjangkau
           </span>

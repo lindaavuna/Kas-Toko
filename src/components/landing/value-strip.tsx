@@ -38,10 +38,10 @@ export function LandingValueStrip() {
   return (
     <section
       id="keunggulan"
-      className="py-14 sm:py-20 bg-white dark:bg-slate-950 border-y border-slate-200 dark:border-slate-800"
+      className="py-8 sm:py-10 bg-white dark:bg-slate-950 border-y border-slate-200 dark:border-slate-800"
     >
-      <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-2xl mx-auto mb-12">
+      <div className="w-full max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
             Dibuat untuk realitas toko Indonesia
           </h2>
@@ -50,14 +50,14 @@ export function LandingValueStrip() {
           </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {pillars.map((p, idx) => {
             const Icon = p.icon;
             return (
               <Reveal
                 key={p.title}
                 delay={idx * 80}
-                className="rounded-2xl p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
+                className="rounded-2xl p-5 sm:p-6 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/60 dark:border-slate-800/60 hover:shadow-lg hover:shadow-emerald-500/5 dark:hover:shadow-emerald-500/5 hover:border-emerald-300/50 dark:hover:border-emerald-700/50 transition-all duration-300"
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${p.warna}`}>
                   <Icon className="w-5 h-5" />
@@ -65,10 +65,10 @@ export function LandingValueStrip() {
                 <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                   {p.title}
                 </h3>
-                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-0.5 mb-2">
+                <p className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5 mb-2">
                   {p.tagline}
                 </p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed">
                   {p.desc}
                 </p>
               </Reveal>
