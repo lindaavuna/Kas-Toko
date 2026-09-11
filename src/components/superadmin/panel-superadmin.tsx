@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Bot, CreditCard, Save, Eye, EyeOff, Store, TrendingUp, AlertTriangle, PlayCircle, Clock } from "lucide-react";
+import { Save, Eye, EyeOff, Store, TrendingUp, AlertTriangle, PlayCircle, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,7 @@ import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut, Activity } from "lucide-react";
 
-export function PanelSuperadmin({ data }: { data: any }) {
+export function PanelSuperadmin({ data }: { data: unknown }) {
   const router = useRouter();
   const { metrics, stores, settings } = data;
 
@@ -211,7 +211,7 @@ export function PanelSuperadmin({ data }: { data: any }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {stores.map((s: any) => (
+                    {stores.map((s: unknown) => (
                       <tr key={s.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="px-4 py-3">
                           {s.is_online ? (
@@ -388,7 +388,8 @@ export function PanelSuperadmin({ data }: { data: any }) {
                     <div className="border-2 border-dashed rounded-lg p-4 text-center">
                       {pg.manual_qris_image ? (
                         <div className="relative inline-block">
-                          <img src={pg.manual_qris_image} alt="QRIS Manual" className="max-h-48 rounded" />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img   src={pg.manual_qris_image} alt="QRIS Manual" className="max-h-48 rounded" />
                           <Button size="sm" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0" onClick={() => setPg({ ...pg, manual_qris_image: null })}>X</Button>
                         </div>
                       ) : (

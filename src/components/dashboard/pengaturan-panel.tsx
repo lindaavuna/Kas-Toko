@@ -22,7 +22,7 @@ import type { Category } from "@/lib/types";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import { aksiSimpanIdentitasToko, aksiSimpanPengaturanAI, aksiTambahKasirAkun, aksiToggleKasirAkun, aksiGantiPinKasir, aksiSimpanPaymentGateway } from "@/lib/server/aksi-kas";
+import { aksiSimpanIdentitasToko, aksiSimpanPengaturanAI, aksiTambahKasirAkun, aksiToggleKasirAkun, aksiSimpanPaymentGateway } from "@/lib/server/aksi-kas";
 import { aksiTambahKategori } from "@/lib/server/aksi-katalog";
 
 const MODE = process.env.NEXT_PUBLIC_APP_MODE ?? "saas";
@@ -430,7 +430,8 @@ export function PanelPengaturan({
                     <div className="border-2 border-dashed rounded-lg p-4 text-center">
                       {pg.manual_qris_image ? (
                         <div className="relative inline-block">
-                          <img src={pg.manual_qris_image} alt="QRIS Manual Toko" className="max-h-48 rounded" />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img   src={pg.manual_qris_image} alt="QRIS Manual Toko" className="max-h-48 rounded" />
                           <Button size="sm" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0" onClick={() => setPg({ ...pg, manual_qris_image: null })}>X</Button>
                         </div>
                       ) : (

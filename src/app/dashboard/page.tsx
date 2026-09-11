@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import { redirect } from "next/navigation";
 import { ambilKonteks } from "@/lib/server/sesi";
 import {

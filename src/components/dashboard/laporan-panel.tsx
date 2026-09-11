@@ -78,6 +78,7 @@ export function PanelLaporan({
 
   useEffect(() => {
     const [mulai, akhir] = rentangTanggal(rentang, dari, sampai);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (rentang !== "kustom") muat(mulai, akhir);
   }, [rentang, muat]); // eslint-disable-line react-hooks/exhaustive-deps
 

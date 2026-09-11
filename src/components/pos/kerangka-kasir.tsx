@@ -100,6 +100,7 @@ export function KerangkaKasir({
   }, [sedangSync, cekStatusOffline, router]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
 
     function handleOnline() {

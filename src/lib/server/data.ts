@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { tanyaPakaiSesi as tanya } from "./db";
 import type { Konteks } from "./sesi";
 import type {

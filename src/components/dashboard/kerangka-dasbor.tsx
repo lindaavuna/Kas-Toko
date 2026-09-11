@@ -179,7 +179,7 @@ export function KerangkaDasbor({
   sewa?: {
     status: string;
     berakhir: string;
-    platformConfig: any;
+    platformConfig: unknown;
   };
   children: React.ReactNode;
 }) {

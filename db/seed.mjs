@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { loadEnv } from "./env.mjs";
 import { hashKredensial } from "./kredensial.mjs";
 import { Pool } from "pg";

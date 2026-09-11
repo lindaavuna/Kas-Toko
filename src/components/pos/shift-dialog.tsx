@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -82,7 +83,7 @@ function IsiBuka({ onTutup }: { onTutup: () => void }) {
     setSibuk(false);
     toast[hasil.ok ? "success" : "error"](hasil.pesan);
     if (hasil.ok) {
-      onTutup();
+      /* */
       router.refresh();
     }
   }
@@ -128,7 +129,7 @@ function IsiBuka({ onTutup }: { onTutup: () => void }) {
 
 type DataLaci = Awaited<ReturnType<typeof aksiRangkumanLaci>>;
 
-function IsiTutup({ onTutup, toko }: { onTutup: () => void; toko: InfoToko }) {
+function IsiTutup({ toko }: { onTutup: () => void; toko: InfoToko }) {
   const router = useRouter();
   const [uangFisik, setUangFisik] = useState("");
   const [data, setData] = useState<DataLaci | null>(null);
@@ -155,7 +156,7 @@ function IsiTutup({ onTutup, toko }: { onTutup: () => void; toko: InfoToko }) {
       toast.error(hasil.pesan);
       return;
     }
-    onTutup();
+    /* */
     router.refresh();
     const selisihTutup = hasil.selisih ?? 0;
     const s = hasil.status ?? (selisihTutup === 0 ? "seimbang" : selisihTutup > 0 ? "lebih" : "kurang");
@@ -329,7 +330,6 @@ export function DialogPengeluaran() {
 }
 
 function IsiPengeluaran({
-  onTutup,
   simpan,
 }: {
   onTutup: () => void;

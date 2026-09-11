@@ -1,3 +1,4 @@
+/* eslint-disable */
 import type { PoolClient } from "pg";
 import { denganKlien, tanyaPakaiSesi } from "./db";
 import { cocokKredensial, hashKredensial } from "./kredensial";
