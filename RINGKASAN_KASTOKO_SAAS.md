@@ -29,7 +29,7 @@ Dokumen ini adalah *Single Source of Truth* (titik acuan utama) agar sesi chat b
 
 ### A. Super Admin Platform (Platform Owner)
 - **Akun**: `admin@billinghmb.site`
-- **Kata Sandi**: `Landrely559!`
+- **Kata Sandi**: *(Dikelola mandiri secara aman / tidak dicatat di repositori)*
 - **Akses Halaman**: Otomatis langsung masuk ke `/superadmin`.
 - **Karakteristik**: Murni pengelola platform SaaS (tidak memiliki toko sembako, tidak jualan, tidak mengelola stok/kasir warung).
 - **Fitur Utama di `/superadmin`**:

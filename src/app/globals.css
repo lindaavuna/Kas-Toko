@@ -155,6 +155,44 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Animasi reveal saat masuk viewport (landing page) */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.is-visible {
+  will-change: opacity, transform;
+  animation: reveal-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+  }
+  .reveal.is-visible {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+/* Fallback jika JavaScript dinonaktifkan — semua konten tetap tampil */
+@media (scripting: none) {
+  .reveal {
+    opacity: 1;
+  }
+}
+
 /* Cetak struk via browser (cadangan selain Bluetooth): hanya area #struk-print yang dicetak */
 @media print {
   body * {

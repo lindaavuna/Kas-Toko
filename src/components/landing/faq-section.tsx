@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+import { Reveal } from "@/components/landing/reveal";
 
 export function LandingFAQ() {
   const faqs = [
@@ -37,39 +37,38 @@ export function LandingFAQ() {
   ];
 
   return (
-    <section id="faq" className="py-16 sm:py-24 bg-slate-50/70 dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-800">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 font-semibold px-3 py-1">
-            Tanya Jawab Populer
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Pertanyaan yang Sering Diajukan
+    <section id="faq" className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+          <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            Tanya jawab populer
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            Pertanyaan yang sering diajukan
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Masih ragu atau punya pertanyaan seputar penggunaan aplikasi? Temukan jawabannya di sini.
           </p>
-        </div>
+        </Reveal>
 
-        {/* FAQ Accordion */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <Accordion type="single" collapsible className="w-full space-y-3">
+        <Reveal delay={100} className="bg-white dark:bg-slate-950 rounded-2xl px-6 sm:px-8 border border-slate-200 dark:border-slate-800">
+          <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, idx) => (
               <AccordionItem
-                key={idx}
+                key={faq.q}
                 value={`item-${idx}`}
-                className="border-b border-slate-100 dark:border-slate-800/80 last:border-b-0 pb-1"
+                className="border-b border-slate-200 dark:border-slate-800 last:border-b-0"
               >
-                <AccordionTrigger className="text-left font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 py-3.5">
+                <AccordionTrigger className="text-left font-medium text-sm sm:text-base text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 py-4">
                   {faq.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed pt-1 pb-4">
+                <AccordionContent className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed pb-4">
                   {faq.a}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

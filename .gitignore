@@ -68,3 +68,6 @@ backups/
 *.sql.gz
 *.sql.bak
 *.dump
+
+# AI agent context memory (berisi kredensial — jangan commit)
+.agents/

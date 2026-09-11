@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Store, Menu, X, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -26,7 +27,7 @@ export function LandingNavbar() {
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -69,7 +70,8 @@ export function LandingNavbar() {
           </nav>
 
           {/* Quick Action Buttons */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2">
+            <ThemeToggle className="text-slate-600 dark:text-slate-300" />
             <Button asChild variant="ghost" className="text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-emerald-600">
               <Link href="/login">Masuk Toko</Link>
             </Button>
@@ -82,7 +84,8 @@ export function LandingNavbar() {
           </div>
 
           {/* Mobile Menu Toggle */}
-          <div className="flex sm:hidden">
+          <div className="flex sm:hidden items-center gap-1">
+            <ThemeToggle className="text-slate-600 dark:text-slate-300" />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
