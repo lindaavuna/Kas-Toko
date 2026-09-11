@@ -71,3 +71,11 @@ backups/
 
 # AI agent context memory (berisi kredensial — jangan commit)
 .agents/
+
+# Internal AI & Planning Documents
+AGENTS.md
+CLAUDE.md
+PRD_*.md
+RENCANA_*.md
+RINGKASAN_*.md
+TAHAP_*.md
