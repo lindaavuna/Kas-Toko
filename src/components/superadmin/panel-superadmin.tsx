@@ -166,17 +166,19 @@ export function PanelSuperadmin({ data }: { data: any }) {
       </div>
 
       <Tabs defaultValue="toko">
-        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent flex-wrap gap-2">
-          <TabsTrigger value="toko" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3">
-            Manajemen Toko Penyewa
-          </TabsTrigger>
-          <TabsTrigger value="paket" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3">
-            Paket & Tarif Langganan
-          </TabsTrigger>
-          <TabsTrigger value="pg" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3">
-            Payment Gateway & Rekening Owner
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-1 border-b">
+          <TabsList className="inline-flex h-auto w-max justify-start p-0 bg-transparent gap-2">
+            <TabsTrigger value="toko" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3 whitespace-nowrap">
+              Manajemen Toko Penyewa
+            </TabsTrigger>
+            <TabsTrigger value="paket" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3 whitespace-nowrap">
+              Paket & Tarif Langganan
+            </TabsTrigger>
+            <TabsTrigger value="pg" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3 whitespace-nowrap">
+              Payment Gateway & Rekening Owner
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="paket" className="mt-6">
           <Card>

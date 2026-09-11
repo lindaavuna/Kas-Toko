@@ -248,6 +248,7 @@ export function KerangkaDasbor({
             </Badge>
             <Lonceng notifikasi={notifikasi} />
             <ThemeToggle className="size-9 rounded-lg" />
+            <HermesChat petugas={petugas} snapshot={snapshot} variant="header" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -300,8 +301,6 @@ export function KerangkaDasbor({
 
         <main className="flex-1 p-3 md:p-5">{children}</main>
       </div>
-
-      <HermesChat petugas={petugas} snapshot={snapshot} />
     </div>
   );
 }

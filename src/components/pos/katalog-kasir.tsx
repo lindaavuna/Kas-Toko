@@ -138,7 +138,7 @@ export function KatalogKasir({
       <BarcodeListener onScan={handleScanBarcode} />
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2 border-b bg-card p-3">
+        <div className="shrink-0 flex items-center gap-2 border-b bg-card p-3">
           <div className="relative flex-1">
             <Search className="absolute inset-y-0 left-3 my-auto size-4 text-muted-foreground" />
             <Input
@@ -157,7 +157,7 @@ export function KatalogKasir({
           </Button>
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto border-b bg-card px-3 py-2">
+        <div className="shrink-0 flex gap-1.5 overflow-x-auto border-b bg-card px-3 py-2">
           <Button size="sm" variant={kategoriAktif === "" ? "default" : "outline"} className="h-8 shrink-0" onClick={() => setKategoriAktif("")}>
             Semua
           </Button>
@@ -169,12 +169,12 @@ export function KatalogKasir({
         </div>
 
         {stokTipis.length > 0 && (
-          <p className="border-b bg-warning/10 px-3 py-1.5 text-xs text-muted-foreground">
+          <p className="shrink-0 border-b bg-warning/10 px-3 py-1.5 text-xs text-muted-foreground">
             ⚠️ Stok menipis: {stokTipis.map((p) => p.name).join(", ")}
           </p>
         )}
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {hasil.map((p) => (
               <button

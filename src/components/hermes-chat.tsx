@@ -9,13 +9,13 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatRupiah } from "@/lib/format";
 import { aksiCatatPengeluaran } from "@/lib/server/aksi-kas";
@@ -327,11 +327,18 @@ export function HermesChat({
           kirim();
         }}
       >
-        <Input
+        <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Tanya omset, stok, atau siapkan draf..."
-          className="h-10 text-xs sm:text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+              e.preventDefault();
+              kirim();
+            }
+          }}
+          rows={1}
+          placeholder="Tanya omset, stok, atau siapkan draf (Ctrl+Enter untuk baris baru)..."
+          className="min-h-[40px] max-h-24 resize-none text-xs sm:text-sm py-2"
           aria-label="Pesan untuk Hermes"
         />
         <Button type="submit" size="sm" className="aspect-square h-10 w-10 p-0 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0" aria-label="Kirim">
@@ -342,12 +349,12 @@ export function HermesChat({
   );
 
   const headerDialog = (
-    <DialogHeader className="shrink-0">
+    <SheetHeader className="shrink-0 text-left">
       <div className="flex items-center justify-between pr-7">
-        <DialogTitle className="flex items-center gap-2 text-base font-bold">
+        <SheetTitle className="flex items-center gap-2 text-base font-bold">
           <Sparkles className="size-4 text-emerald-600" />
           <span>Asisten Toko Hermes</span>
-        </DialogTitle>
+        </SheetTitle>
         <div className="flex items-center gap-1.5">
           <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950" onClick={bersihkanObrolan} title="Sesi Baru / Bersihkan Obrolan">
             <Trash2 className="h-3.5 w-3.5" />
@@ -358,10 +365,10 @@ export function HermesChat({
           </Badge>
         </div>
       </div>
-      <DialogDescription className="text-xs text-slate-500">
+      <SheetDescription className="text-xs text-slate-500">
         Konsultasi omset, analisa stok, dan manajemen kasbon toko.
-      </DialogDescription>
-    </DialogHeader>
+      </SheetDescription>
+    </SheetHeader>
   );
 
   if (variant === "header") {
@@ -370,30 +377,32 @@ export function HermesChat({
         <Button size="sm" variant="ghost" className="h-9 px-2 text-emerald-600" onClick={() => setBuka(true)} aria-label="Buka asisten AI Hermes">
           <Sparkles className="size-4" />
         </Button>
-        <Dialog open={buka} onOpenChange={setBuka}>
-          <DialogContent
-            className="sm:max-w-md flex flex-col p-4 sm:p-5 gap-3 overflow-hidden shadow-2xl rounded-2xl h-[520px] max-h-[80vh]"
-            style={{ height: "520px", maxHeight: "80vh" }}
+        <Sheet open={buka} onOpenChange={setBuka} modal={false}>
+          <SheetContent
+            side="right"
+            showOverlay={false}
+            className="w-full sm:max-w-[400px] flex flex-col p-4 sm:p-5 gap-3 shadow-2xl border-l"
           >
             {headerDialog}
             {isiKonten}
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
       </>
     );
   }
 
   return (
     <>
-      <Dialog open={buka} onOpenChange={setBuka}>
-        <DialogContent
-          className="fixed bottom-20 right-4 left-auto top-auto translate-x-0 translate-y-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[calc(100vw-2rem)] sm:max-w-[400px] flex flex-col p-4 sm:p-5 gap-3 overflow-hidden shadow-2xl rounded-2xl h-[520px] max-h-[80vh]"
-          style={{ height: "520px", maxHeight: "80vh" }}
+      <Sheet open={buka} onOpenChange={setBuka} modal={false}>
+        <SheetContent
+          side="right"
+          showOverlay={false}
+          className="w-full sm:max-w-[400px] flex flex-col p-4 sm:p-5 gap-3 shadow-2xl border-l"
         >
           {headerDialog}
           {isiKonten}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
       <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3">
         {!buka && (
           <div className="animate-bounce bg-emerald-600 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-lg border border-emerald-500 pointer-events-none whitespace-nowrap relative">
