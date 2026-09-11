@@ -159,7 +159,7 @@ export function FormRegister() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="reg-email" className="text-xs font-semibold">Email Pemilik</Label>
-              <Input id="reg-email" type="email" placeholder="budi@tokoberkah.id" value={form.email} onChange={ubah("email")} required />
+              <Input id="reg-email" type="email" placeholder="email@tokoanda.com" value={form.email} onChange={ubah("email")} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="reg-password" className="text-xs font-semibold">Password Akun</Label>

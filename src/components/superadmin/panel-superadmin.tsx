@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-import { aksiSimpanPengaturanPlatform, aksiPerpanjangSewaToko, aksiUbahStatusToko, aksiSimpanPaketLangganan } from "@/lib/server/aksi-superadmin";
+import { aksiSimpanPengaturanPlatform, aksiPerpanjangSewaToko, aksiUbahStatusToko, aksiSimpanPaketLangganan, aksiHapusTokoPermanen } from "@/lib/server/aksi-superadmin";
 import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut, Activity } from "lucide-react";
@@ -109,6 +109,19 @@ export function PanelSuperadmin({ data }: { data: any }) {
     }
   }
 
+  async function handleHapus(storeId: string, storeName: string) {
+    if (!confirm(`Peringatan Keras!\n\nAnda yakin ingin menghapus permanen toko "${storeName}"?\nSeluruh data barang dan riwayat transaksinya akan musnah dan tidak bisa dikembalikan.`)) return;
+
+    const id = toast.loading(`Menghapus toko...`);
+    const res = await aksiHapusTokoPermanen(storeId);
+    if (res.ok) {
+      toast.success(res.pesan, { id });
+      router.refresh();
+    } else {
+      toast.error(res.pesan, { id });
+    }
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-7xl space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -117,7 +130,7 @@ export function PanelSuperadmin({ data }: { data: any }) {
           <p className="text-muted-foreground">Pusat Kendali Platform & Sewa SaaS</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="px-3 py-1 font-normal">admin@billinghmb.site</Badge>
+          <Badge variant="outline" className="px-3 py-1 font-normal text-primary border-primary/50">Super Admin</Badge>
           <ThemeToggle className="size-9 rounded-lg" />
           <Button onClick={() => aksiKeluar()} variant="destructive" size="sm">
             <LogOut className="mr-2 size-4" /> Keluar Platform
@@ -272,6 +285,10 @@ export function PanelSuperadmin({ data }: { data: any }) {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleStatus(s.id, 'expired')} className="text-destructive font-medium">
                                 Kunci / Suspend Toko (Expired)
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleHapus(s.id, s.name)} className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground">
+                                🗑️ Hapus Permanen
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

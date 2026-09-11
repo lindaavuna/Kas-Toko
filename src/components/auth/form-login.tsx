@@ -160,7 +160,7 @@ export function FormLogin({ tipe = "toko" }: { tipe?: "toko" | "superadmin" }) {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="budi@tokoberkah.id"
+                  placeholder="email@tokoanda.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -209,7 +209,7 @@ export function FormLogin({ tipe = "toko" }: { tipe?: "toko" | "superadmin" }) {
                 <Input
                   id="email-kasir"
                   type="email"
-                  placeholder="siti@tokoberkah.id atau budi@tokoberkah.id"
+                  placeholder="email.kasir@tokoanda.com atau email@tokoanda.com"
                   value={emailKasir}
                   onChange={(e) => setEmailKasir(e.target.value)}
                   autoComplete="username"

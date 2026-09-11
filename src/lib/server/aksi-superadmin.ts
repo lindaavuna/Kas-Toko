@@ -199,3 +199,14 @@ export async function aksiUbahStatusToko(storeId: string, status: string): Promi
     return { ok: false, pesan: e.message || "Gagal mengubah status toko" };
   }
 }
+
+export async function aksiHapusTokoPermanen(storeId: string): Promise<{ ok: boolean; pesan: string }> {
+  try {
+    await wajibSuperAdmin();
+    await tanya("DELETE FROM stores WHERE id = $1", [storeId]);
+    revalidatePath("/superadmin");
+    return { ok: true, pesan: "Toko berhasil dihapus permanen beserta seluruh datanya." };
+  } catch (e: any) {
+    return { ok: false, pesan: e.message || "Gagal menghapus toko" };
+  }
+}

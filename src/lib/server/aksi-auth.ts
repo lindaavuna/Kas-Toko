@@ -105,7 +105,7 @@ export async function aksiMasukKasir(input: { email: string; pin: string }): Pro
     }
   }
 
-  // 2. Jika user memasukkan email toko / pemilik (mis. budi@tokoberkah.id) dengan PIN kasirnya:
+  // 2. Jika user memasukkan email toko / pemilik (mis. email@tokoanda.com) dengan PIN kasirnya:
   // Cari seluruh kasir aktif di toko yang sama yang memiliki PIN cocok
   const kasirToko = await tanya<{ user_id: string; cashier_pin: string }>(
     `select sm.user_id, sm.cashier_pin
