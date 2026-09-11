@@ -235,8 +235,8 @@ export function HermesChat({
   ];
 
   const isiKonten = (
-    <div className="flex h-[60vh] max-h-[480px] flex-col">
-      <ScrollArea className="flex-1 pr-2">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0 pr-2">
         <div className="space-y-3 py-2">
           {pesan.map((m, i) => (
             <div key={i} className={m.dari === "user" ? "flex justify-end" : "flex justify-start"}>
@@ -297,19 +297,20 @@ export function HermesChat({
         </div>
       </ScrollArea>
 
-      <div className="flex flex-wrap gap-1.5 border-t pt-2">
+      <div className="shrink-0 flex flex-wrap gap-1.5 border-t border-slate-200 dark:border-slate-800 pt-2">
         {saran.map((s) => (
           <button
             key={s}
+            type="button"
             onClick={() => kirim(s)}
-            className="rounded-full border bg-card px-2.5 py-1 text-xs text-muted-foreground transition hover:border-emerald-500 hover:text-emerald-600"
+            className="rounded-full border bg-card px-2.5 py-1 text-[11px] text-muted-foreground transition hover:border-emerald-500 hover:text-emerald-600"
           >
             {s}
           </button>
         ))}
       </div>
       <form
-        className="flex gap-2 pt-2"
+        className="shrink-0 flex gap-2 pt-2"
         onSubmit={(e) => {
           e.preventDefault();
           kirim();
@@ -318,11 +319,11 @@ export function HermesChat({
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Tanya omset, stok, atau siapkan draf pengeluaran..."
-          className="h-11 text-xs sm:text-sm"
+          placeholder="Tanya omset, stok, atau siapkan draf..."
+          className="h-10 text-xs sm:text-sm"
           aria-label="Pesan untuk Hermes"
         />
-        <Button type="submit" size="lg" className="aspect-square h-11 p-0 bg-emerald-600 hover:bg-emerald-700 text-white" aria-label="Kirim">
+        <Button type="submit" size="sm" className="aspect-square h-10 w-10 p-0 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0" aria-label="Kirim">
           <Send className="size-4" />
         </Button>
       </form>
@@ -330,8 +331,8 @@ export function HermesChat({
   );
 
   const headerDialog = (
-    <DialogHeader>
-      <div className="flex items-center justify-between pr-6">
+    <DialogHeader className="shrink-0">
+      <div className="flex items-center justify-between pr-7">
         <DialogTitle className="flex items-center gap-2 text-base font-bold">
           <Sparkles className="size-4 text-emerald-600" />
           <span>Asisten Toko Hermes</span>
@@ -356,7 +357,7 @@ export function HermesChat({
           <Bot className="size-4" />
         </Button>
         <Dialog open={buka} onOpenChange={setBuka}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md h-[min(600px,85vh)] flex flex-col p-4 gap-3 overflow-hidden">
             {headerDialog}
             {isiKonten}
           </DialogContent>
@@ -368,7 +369,7 @@ export function HermesChat({
   return (
     <>
       <Dialog open={buka} onOpenChange={setBuka}>
-        <DialogContent className="fixed bottom-20 right-4 left-auto top-auto w-[min(92vw,24rem)] translate-y-0 sm:max-w-md">
+        <DialogContent className="fixed bottom-20 right-4 left-auto top-auto translate-x-0 translate-y-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[calc(100vw-2rem)] sm:max-w-[400px] h-[min(560px,calc(100dvh-6rem))] flex flex-col p-4 gap-3 overflow-hidden shadow-2xl rounded-2xl">
           {headerDialog}
           {isiKonten}
         </DialogContent>
