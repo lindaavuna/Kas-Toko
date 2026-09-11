@@ -585,7 +585,7 @@ export async function ambilAkunKasir(ctx: Konteks): Promise<AkunKasirDb[]> {
 }
 
 export async function ambilIdentitasToko(ctx: Konteks) {
-  if (!ctx.storeId) return [{}];
+  if (!ctx.storeId) return { nama: "", alamat: "", telepon: "", kakiStruk: "", statusSewa: "active", sewaBerakhir: "", aiAktif: false, aiApiKey: "", aiBaseUrl: "", paymentGateway: { provider: "duitku", merchantCode: "", apiKey: "", isSandbox: true, isActive: false, manual_qris_image: null, manual_bank_name: "", manual_bank_account: "", manual_bank_holder: "" } };
   const [r] = await tanya<Row>(
     ctx.userId,
     `select name, address, phone, receipt_footer, currency, subscription_status,

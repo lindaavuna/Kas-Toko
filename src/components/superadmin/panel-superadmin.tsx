@@ -17,15 +17,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
-import { aksiSimpanPengaturanPlatform, aksiPerpanjangSewaToko, aksiUbahStatusToko, aksiSimpanPaketLangganan, aksiHapusTokoPermanen } from "@/lib/server/aksi-superadmin";
+import { aksiSimpanPengaturanPlatform, aksiPerpanjangSewaToko, aksiUbahStatusToko, aksiSimpanPaketLangganan, aksiHapusTokoPermanen, aksiUbahSandiSuperadmin } from "@/lib/server/aksi-superadmin";
 import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LogOut, Activity } from "lucide-react";
+import { LogOut, Activity, User, Key, ChevronDown } from "lucide-react";
 
-export function PanelSuperadmin({ data }: { data: any }) {
+export function PanelSuperadmin({ data }: { data: { metrics: Record<string, unknown>, stores: Record<string, unknown>[], settings: Record<string, unknown> } }) {
   const router = useRouter();
   const { metrics, stores, settings } = data;
 
@@ -52,8 +54,9 @@ export function PanelSuperadmin({ data }: { data: any }) {
     manual_bank_holder: settings.manual_bank_holder || "",
     manual_qris_is_active: settings.manual_qris_is_active ?? true,
   });
+  const [sandiBaru, setSandiBaru] = useState("");
+  const [showSandi, setShowSandi] = useState(false);
   const [showPgKey, setShowPgKey] = useState(false);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -122,6 +125,19 @@ export function PanelSuperadmin({ data }: { data: any }) {
     }
   }
 
+  async function handleUbahSandi() {
+    if (sandiBaru.length < 6) return toast.error("Sandi minimal 6 karakter.");
+    const id = toast.loading("Mengubah kata sandi...");
+    const res = await aksiUbahSandiSuperadmin(sandiBaru);
+    if (res.ok) {
+      toast.success(res.pesan, { id });
+      setSandiBaru("");
+    } else {
+      toast.error(res.pesan, { id });
+    }
+  }
+
+
   return (
     <div className="container mx-auto p-6 max-w-7xl space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -130,11 +146,59 @@ export function PanelSuperadmin({ data }: { data: any }) {
           <p className="text-muted-foreground">Pusat Kendali Platform & Sewa SaaS</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="px-3 py-1 font-normal text-primary border-primary/50">Super Admin</Badge>
+          <Badge variant="outline" className="px-3 py-1 font-normal text-primary border-primary/50 hidden md:inline-flex">Super Admin</Badge>
           <ThemeToggle className="size-9 rounded-lg" />
-          <Button onClick={() => aksiKeluar()} variant="destructive" size="sm">
-            <LogOut className="mr-2 size-4" /> Keluar Platform
-          </Button>
+          
+          <Dialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <User className="size-4" />
+                  <span className="hidden sm:inline">Akun</span>
+                  <ChevronDown className="size-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <p className="text-sm font-medium">Super Admin</p>
+                  <p className="text-xs text-muted-foreground font-normal">admin@billinghmb.site</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DialogTrigger asChild>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Key className="mr-2 size-4" />
+                    <span>Ubah Kata Sandi</span>
+                  </DropdownMenuItem>
+                </DialogTrigger>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive focus:bg-destructive/10 cursor-pointer" onClick={() => aksiKeluar()}>
+                  <LogOut className="mr-2 size-4" />
+                  <span>Exit</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Ubah Kata Sandi Superadmin</DialogTitle>
+                <DialogDescription>Masukkan kata sandi baru untuk mengamankan akun utama platform ini.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-1.5">
+                  <Label>Kata Sandi Baru</Label>
+                  <div className="relative">
+                    <Input type={showSandi ? "text" : "password"} value={sandiBaru} onChange={(e) => setSandiBaru(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" />
+                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full hover:bg-transparent" onClick={() => setShowSandi(!showSandi)}>
+                      {showSandi ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <Button size="lg" onClick={handleUbahSandi} className="w-full">
+                  <Save className="mr-2 size-4" /> Simpan Perubahan
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -227,7 +291,7 @@ export function PanelSuperadmin({ data }: { data: any }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {stores.map((s: any) => (
+                    {stores.map((s) => (
                       <tr key={s.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="px-4 py-3">
                           {s.is_online ? (

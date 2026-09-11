@@ -14,16 +14,16 @@ import {
 import { Crown, Zap, ShieldCheck } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 
-export function WidgetSewa({ sewa }: { sewa: any }) {
+export function WidgetSewa({ sewa }: { sewa: Record<string, unknown> | null }) {
   const [open, setOpen] = useState(false);
-  if (!sewa || !sewa.platformConfig) return null;
+  const [paketPilihan, setPaketPilihan] = useState<"bulanan" | "tahunan">("tahunan");
+  const [metodePilihan, setMetodePilihan] = useState<"manual" | "otomatis">("otomatis");
+  const [tampilManual, setTampilManual] = useState(false);
 
+  if (!sewa || !sewa.platformConfig) return null;
+  
   const { status, berakhir, platformConfig } = sewa;
   const { monthlyFee, yearlyFee, primaryGateway, manualQris } = platformConfig;
-
-  const [paketPilihan, setPaketPilihan] = useState<"bulanan" | "tahunan">("tahunan");
-  const [metodePilihan, setMetodePilihan] = useState<"manual" | "otomatis">(manualQris ? "manual" : "otomatis");
-  const [tampilManual, setTampilManual] = useState(false);
 
   // Hitung sisa hari
   const sisaHari = Math.ceil((new Date(berakhir).getTime() - new Date().getTime()) / (1000 * 3600 * 24));

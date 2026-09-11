@@ -39,7 +39,6 @@ export function PanelPengaturan({
   categories,
   cashierAccounts,
   identitas,
-  sewa,
   aiConfig,
   pgConfig,
 }: {

@@ -203,10 +203,33 @@ export async function aksiUbahStatusToko(storeId: string, status: string): Promi
 export async function aksiHapusTokoPermanen(storeId: string): Promise<{ ok: boolean; pesan: string }> {
   try {
     await wajibSuperAdmin();
+    // Ambil daftar user (owner & kasir) yang terikat ke toko ini sebelum dihapus
+    const users = await tanya<{user_id: string}>("SELECT user_id FROM store_members WHERE store_id = $1", [storeId]);
+    
+    // Hapus toko (akan men-cascade hapus ke produk, sales, kasbon, dan store_members)
     await tanya("DELETE FROM stores WHERE id = $1", [storeId]);
+    
+    // Hapus akun pengguna yatim agar email bisa dipakai daftar lagi (kecuali superadmin)
+    if (users.length > 0) {
+      const ids = users.map(u => u.user_id);
+      await tanya("DELETE FROM users WHERE id = ANY($1::uuid[]) AND is_superadmin = false", [ids]);
+    }
     revalidatePath("/superadmin");
     return { ok: true, pesan: "Toko berhasil dihapus permanen beserta seluruh datanya." };
   } catch (e: any) {
     return { ok: false, pesan: e.message || "Gagal menghapus toko" };
+  }
+}
+
+export async function aksiUbahSandiSuperadmin(passwordBaru: string): Promise<{ ok: boolean; pesan: string }> {
+  try {
+    const ctx = await wajibSuperAdmin();
+    if (passwordBaru.length < 6) throw new Error("Kata sandi minimal 6 karakter.");
+    const { hashKredensial } = await import("./kredensial");
+    const hash = hashKredensial(passwordBaru);
+    await tanya("UPDATE users SET password_hash = $1 WHERE id = $2 AND is_superadmin = true", [hash, ctx.userId]);
+    return { ok: true, pesan: "Kata sandi Super Admin berhasil diperbarui." };
+  } catch (e: any) {
+    return { ok: false, pesan: e.message || "Gagal mengubah kata sandi" };
   }
 }
