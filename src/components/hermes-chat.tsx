@@ -3,7 +3,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, ChevronDown, Send, Sparkles, ShieldCheck, Check, AlertCircle, Trash2 } from "lucide-react";
+import { Bot, ChevronDown, Send, Sparkles, ShieldCheck, Check, AlertCircle, Trash2, Crown } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,11 @@ export function HermesChat({
   variant?: "floating" | "header";
 }) {
   const router = useRouter();
+  const pemilik = petugas.peran === "owner";
+  const sapaanAwal = pemilik 
+    ? `Halo Bos ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda. Mode Admin aktif dengan akses penuh. Ingin cek performa laba hari ini atau atur stok?`
+    : `Halo ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda (Mode Read-Only Aman). Mau tanya omset kasir, cek stok tipis, atau siapkan draf pengeluaran?`;
+
   const [buka, setBuka] = useState(false);
   const [input, setInput] = useState("");
   const [sedangKetik, setSedangKetik] = useState(false);
@@ -56,7 +61,7 @@ export function HermesChat({
   const [pesan, setPesan] = useState<PesanChat[]>([
     {
       dari: "hermes",
-      teks: `Halo ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda (Mode Read-Only Aman). Mau tanya omset, cek stok tipis, atau siapkan draf pengeluaran hari ini?`,
+      teks: sapaanAwal,
     },
   ]);
 
@@ -64,7 +69,7 @@ export function HermesChat({
     setPesan([
       {
         dari: "hermes",
-        teks: `Halo ${petugas.nama.split(" ")[0]}! Saya Hermes, asisten toko pintar Anda (Mode Read-Only Aman). Mau tanya omset, cek stok tipis, atau siapkan draf pengeluaran hari ini?`,
+        teks: sapaanAwal,
       },
     ]);
   }
@@ -74,8 +79,6 @@ export function HermesChat({
   useEffect(() => {
     bawahRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [pesan, sedangKetik]);
-
-  const pemilik = petugas.peran === "owner";
 
   async function jawabLokal(teksUser: string): Promise<PesanChat[]> {
     const q = teksUser.toLowerCase();
@@ -158,7 +161,9 @@ export function HermesChat({
 
     return keluar(
       "",
-      'Halo! Saya Asisten AI Hermes (Mode Read-Only). Contoh yang bisa ditanyakan:\n• "Omset hari ini berapa?"\n• "Barang apa yang stoknya mau habis?"\n• "Siapa saja yang punya kasbon?"\n• "Siapkan draf beli bensin Rp 20.000"'
+      pemilik 
+        ? 'Halo Bos! Saya Asisten AI Hermes. Anda bebas memerintah saya:\n• "Berapa laba kotor hari ini?"\n• "Siapa saja yang punya kasbon?"\n• "Barang apa yang mau habis?"\n• "Siapkan draf beli bensin Rp 20.000"'
+        : 'Halo! Saya Asisten AI Hermes (Mode Read-Only). Contoh yang bisa ditanyakan:\n• "Berapa omset kasir hari ini?"\n• "Barang apa yang stoknya mau habis?"\n• "Siapkan draf beli bensin Rp 20.000"'
     );
   }
 
@@ -236,12 +241,18 @@ export function HermesChat({
     setPesan((p) => [...p, ...jawaban]);
   }
 
-  const saran = [
-    "Omset hari ini berapa?",
-    "Barang apa yang mau habis?",
-    "Siapa saja yang punya kasbon?",
-    "Siapkan draf beli bensin Rp 20.000",
-  ];
+  const saran = pemilik 
+    ? [
+        "Laba kotor hari ini?",
+        "Siapa yang paling banyak kasbon?",
+        "Barang apa yang mau habis?",
+        "Siapkan draf beli bensin Rp 20.000",
+      ]
+    : [
+        "Omset kasir hari ini?",
+        "Barang apa yang mau habis?",
+        "Siapkan draf beli bensin Rp 20.000",
+      ];
 
   const isiKonten = (
     <div
@@ -359,14 +370,21 @@ export function HermesChat({
           <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950" onClick={bersihkanObrolan} title="Sesi Baru / Bersihkan Obrolan">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
-          <Badge variant="outline" className="text-[10px] bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-300">
-            <ShieldCheck className="w-3 h-3 mr-1 text-emerald-600" />
-            Read-Only Aman
-          </Badge>
+          {pemilik ? (
+            <Badge variant="outline" className="text-[10px] bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-300">
+              <Crown className="w-3 h-3 mr-1 text-amber-600" />
+              Admin Penuh
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-300">
+              <ShieldCheck className="w-3 h-3 mr-1 text-emerald-600" />
+              Read-Only Aman
+            </Badge>
+          )}
         </div>
       </div>
       <SheetDescription className="text-xs text-slate-500">
-        Konsultasi omset, analisa stok, dan manajemen kasbon toko.
+        {pemilik ? "Kontrol penuh performa, stok, kasbon & aksi toko." : "Konsultasi omset, analisa stok, dan informasi toko."}
       </SheetDescription>
     </SheetHeader>
   );

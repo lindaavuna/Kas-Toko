@@ -573,6 +573,7 @@ export interface AkunKasirDb {
 
 /** Definer: hanya pemilik yang bisa lihat daftar akun kasir lengkap dengan email */
 export async function ambilAkunKasir(ctx: Konteks): Promise<AkunKasirDb[]> {
+  if (!ctx.storeId) return [];
   if (ctx.peran !== "owner") return [];
   const rows = await tanya<Row>(ctx.userId, "select * from kas_daftar_kasir($1)", [ctx.storeId]);
   return rows.map((r) => ({
@@ -584,6 +585,7 @@ export async function ambilAkunKasir(ctx: Konteks): Promise<AkunKasirDb[]> {
 }
 
 export async function ambilIdentitasToko(ctx: Konteks) {
+  if (!ctx.storeId) return [{}];
   const [r] = await tanya<Row>(
     ctx.userId,
     `select name, address, phone, receipt_footer, currency, subscription_status,
