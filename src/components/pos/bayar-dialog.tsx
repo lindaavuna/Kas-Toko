@@ -370,10 +370,12 @@ function PanelQrisDuitku({ total, lunas, onSimulasi }: { total: number; lunas: b
             <Timer className="size-4" />
             Kedaluwarsa {Math.floor(sisaDetik / 60)}:{(sisaDetik % 60).toString().padStart(2, "0")}
           </p>
-          <Button variant="outline" onClick={onSimulasi}>
-            <QrCode className="size-4" />
-            [Demo] Pembeli Sudah Bayar
-          </Button>
+          {process.env.NODE_ENV !== "production" && (
+            <Button variant="outline" onClick={onSimulasi}>
+              <QrCode className="size-4" />
+              [Dev] Pembeli Sudah Bayar
+            </Button>
+          )}
         </>
       )}
     </>

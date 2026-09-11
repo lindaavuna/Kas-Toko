@@ -227,8 +227,7 @@ export function PanelTransaksi({ sales, toko, pelanggan }: {
               Koreksi Transaksi (Void)
             </DialogTitle>
             <DialogDescription>
-              Pembatalan {voidTarget?.receiptNumber} membutuhkan PIN Otorisasi Pemilik Toko
-              (demo: {/** PIN Budi = 8765 */}8765). Stok kembali, kas terpotong, dan tercatat di log.
+              Pembatalan {voidTarget?.receiptNumber} membutuhkan PIN Otorisasi Pemilik Toko. Stok kembali, kas terpotong, dan tercatat di log.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

@@ -233,7 +233,7 @@ export function FormLogin({ tipe = "toko" }: { tipe?: "toko" | "superadmin" }) {
                   />
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Demo kasir: <span className="font-semibold text-foreground">siti@tokoberkah.id</span> (PIN 1234) atau masukkan email toko dengan PIN kasir Anda.
+                  Masukkan email toko dan PIN khusus kasir Anda.
                 </p>
               </div>
               <Button

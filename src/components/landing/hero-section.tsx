@@ -85,7 +85,7 @@ export function LandingHero() {
               >
                 <Link href="/login" className="flex items-center gap-2">
                   <Play className="w-4 h-4" />
-                  <span>Coba demo aplikasi</span>
+                  <span>Masuk ke Aplikasi</span>
                 </Link>
               </Button>
             </div>
