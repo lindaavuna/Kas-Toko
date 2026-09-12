@@ -32,10 +32,8 @@ export const ambilKonteks = cache(async (): Promise<Konteks | null> => {
   const isi = bacaToken(token);
   if (!isi) return null;
 
-  const dbData = await tanya<{
-    u_id: string; full_name: string; email: string; is_superadmin: boolean;
-    store_id: string | null; store_name: string | null; role: string | null; subscription_status: string | null;
-  }>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dbData = await tanya<any>(
     `WITH s AS (SELECT user_id FROM kas_read_session($1)),
           u AS (SELECT * FROM kas_get_user_by_id($2) WHERE id IN (SELECT user_id FROM s)),
           c AS (SELECT * FROM kas_user_context($2))

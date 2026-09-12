@@ -14,7 +14,8 @@ import {
 import { Crown, Zap, ShieldCheck } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 
-export function WidgetSewa({ sewa }: { sewa: Record<string, unknown> | null }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function WidgetSewa({ sewa }: { sewa: any }) {
   const [open, setOpen] = useState(false);
   const [paketPilihan, setPaketPilihan] = useState<"bulanan" | "tahunan">("tahunan");
   const [metodePilihan, setMetodePilihan] = useState<"manual" | "otomatis">("otomatis");

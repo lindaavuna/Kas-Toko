@@ -26,8 +26,10 @@ import { aksiSimpanPengaturanPlatform, aksiPerpanjangSewaToko, aksiUbahStatusTok
 import { aksiKeluar } from "@/lib/server/aksi-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut, Activity, User, Key, ChevronDown } from "lucide-react";
+import { HermesSuperadmin } from "./hermes-superadmin";
 
-export function PanelSuperadmin({ data }: { data: { metrics: Record<string, unknown>, stores: Record<string, unknown>[], settings: Record<string, unknown> } }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function PanelSuperadmin({ data }: { data: any }) {
   const router = useRouter();
   const { metrics, stores, settings } = data;
 
@@ -291,7 +293,8 @@ export function PanelSuperadmin({ data }: { data: { metrics: Record<string, unkn
                     </tr>
                   </thead>
                   <tbody>
-                    {stores.map((s) => (
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {stores.map((s: any) => (
                       <tr key={s.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="px-4 py-3">
                           {s.is_online ? (
@@ -513,6 +516,7 @@ export function PanelSuperadmin({ data }: { data: { metrics: Record<string, unkn
           </Card>
         </TabsContent>
       </Tabs>
+      <HermesSuperadmin data={data} />
     </div>
   );
 }
