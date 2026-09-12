@@ -20,6 +20,7 @@ export function WidgetSewa({ sewa }: { sewa: any }) {
   const [paketPilihan, setPaketPilihan] = useState<"bulanan" | "tahunan">("tahunan");
   const [metodePilihan, setMetodePilihan] = useState<"manual" | "otomatis">("otomatis");
   const [tampilManual, setTampilManual] = useState(false);
+  const [paywuzMethod, setPaywuzMethod] = useState<"QRIS" | "VA">("QRIS");
 
   if (!sewa || !sewa.platformConfig) return null;
   
@@ -51,7 +52,7 @@ export function WidgetSewa({ sewa }: { sewa: any }) {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
           {tampilManual ? (
             <div className="space-y-4 py-4 text-center">
               <DialogHeader>
@@ -146,29 +147,69 @@ export function WidgetSewa({ sewa }: { sewa: any }) {
                       </div>
                     </div>
                   )}
-                  <div 
-                    className={`flex items-center gap-3 cursor-pointer p-2 rounded-md border ${metodePilihan === "otomatis" ? "border-primary bg-background" : "border-transparent hover:bg-background"}`}
-                    onClick={() => setMetodePilihan("otomatis")}
-                  >
-                    <div className="flex size-4 shrink-0 items-center justify-center rounded-full border border-primary">
-                      {metodePilihan === "otomatis" && <div className="size-2 rounded-full bg-primary" />}
+                  <div className={`flex flex-col gap-2 p-2 rounded-md border ${metodePilihan === "otomatis" ? "border-primary bg-background" : "border-transparent hover:bg-background"}`}>
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setMetodePilihan("otomatis")}>
+                      <div className="flex size-4 shrink-0 items-center justify-center rounded-full border border-primary">
+                        {metodePilihan === "otomatis" && <div className="size-2 rounded-full bg-primary" />}
+                      </div>
+                      <Zap className="size-5 text-primary" />
+                      <div className="text-sm">
+                        <p className="font-medium">Pembayaran Online Otomatis</p>
+                        <p className="text-xs text-muted-foreground">Aktif seketika. Didukung oleh {primaryGateway}.</p>
+                      </div>
                     </div>
-                    <Zap className="size-5 text-primary" />
-                    <div className="text-sm">
-                      <p className="font-medium">Pembayaran Online Otomatis</p>
-                      <p className="text-xs text-muted-foreground">Otomatis langsung aktif setelah pembayaran berhasil.</p>
-                    </div>
+                    {metodePilihan === "otomatis" && primaryGateway === "paywuz" && (
+                      <div className="pl-7 pr-2 pt-2 flex flex-col gap-2 border-t mt-1">
+                        <p className="text-[11px] font-semibold text-muted-foreground">Pilih Jalur Paywuz:</p>
+                        <div className="grid grid-cols-2 gap-2 w-full">
+                          <Button 
+                            type="button"
+                            variant={paywuzMethod === "QRIS" ? "default" : "outline"} 
+                            size="sm" 
+                            className="w-full text-xs h-8 truncate"
+                            onClick={() => setPaywuzMethod("QRIS")}
+                          >QRIS (Scan)</Button>
+                          <Button 
+                            type="button"
+                            variant={paywuzMethod === "VA" ? "default" : "outline"} 
+                            size="sm" 
+                            className="w-full text-xs h-8 truncate"
+                            onClick={() => setPaywuzMethod("VA")}
+                          >Transfer Bank (VA)</Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 <Button 
                   className="w-full mt-4" 
                   size="lg"
-                  onClick={() => {
+                  onClick={async () => {
                     if (metodePilihan === "manual") {
                       setTampilManual(true);
                     } else {
-                      toast.info(`Sistem pembayaran otomatis via ${primaryGateway} sedang dalam pemeliharaan. Silakan gunakan metode QRIS Owner (Manual) sementara waktu.`);
+                      const durasiHari = paketPilihan === "tahunan" ? 365 : 30;
+                      const amount = paketPilihan === "tahunan" ? yearlyFee : monthlyFee;
+                      const idToast = toast.loading(`Membuka gerbang ${primaryGateway}...`);
+                      try {
+                        const res = await fetch(`/api/payment/${primaryGateway}/create`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ amount, durasiHari, paymentMethod: paywuzMethod })
+                        });
+                        const data = await res.json();
+                        if (data.ok) {
+                          toast.success("Berhasil! Mengarahkan ke halaman pembayaran...", { id: idToast });
+                          if (data.paymentUrl) {
+                            window.location.href = data.paymentUrl;
+                          }
+                        } else {
+                          toast.error(data.error || "Gagal membuat transaksi", { id: idToast });
+                        }
+                      } catch {
+                        toast.error("Terjadi kesalahan jaringan", { id: idToast });
+                      }
                     }
                   }}
                 >
