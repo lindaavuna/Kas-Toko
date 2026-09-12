@@ -15,7 +15,7 @@ interface PesanChat {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function HermesSuperadmin({ data }: { data: any }) {
+export function HermesSuperadmin({ data, variant = "floating" }: { data: any, variant?: "floating" | "header" }) {
   const { metrics, stores } = data;
   const sapaanAwal = `Halo Bos Platform! Saya Hermes Superadmin. Ada yang ingin Anda tanyakan seputar performa SaaS KasToko Anda hari ini?`;
 
@@ -133,6 +133,22 @@ export function HermesSuperadmin({ data }: { data: any }) {
       </form>
     </div>
   );
+
+  if (variant === "header") {
+    return (
+      <>
+        <Button size="sm" variant="ghost" className="h-9 px-2 text-primary" onClick={() => setBuka(true)} aria-label="Buka asisten AI Hermes Superadmin">
+          <Sparkles className="size-4" />
+        </Button>
+        <Sheet open={buka} onOpenChange={setBuka} modal={false}>
+          <SheetContent side="right" showOverlay={false} className="w-full sm:max-w-[400px] flex flex-col p-4 sm:p-5 gap-3 shadow-2xl border-l">
+            {headerDialog}
+            {isiKonten}
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
 
   return (
     <>

@@ -150,6 +150,7 @@ export function PanelSuperadmin({ data }: { data: any }) {
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="px-3 py-1 font-normal text-primary border-primary/50 hidden md:inline-flex">Super Admin</Badge>
           <ThemeToggle className="size-9 rounded-lg" />
+          <HermesSuperadmin data={data} variant="header" />
           
           <Dialog>
             <DropdownMenu>
@@ -516,7 +517,6 @@ export function PanelSuperadmin({ data }: { data: any }) {
           </Card>
         </TabsContent>
       </Tabs>
-      <HermesSuperadmin data={data} />
     </div>
   );
 }
